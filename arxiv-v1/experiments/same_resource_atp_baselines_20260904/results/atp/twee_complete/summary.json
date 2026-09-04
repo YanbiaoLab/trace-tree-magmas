@@ -1,0 +1,224 @@
+{
+  "capability_counts": {
+    "complete_tstp_proof_emitted": 81,
+    "explicit_infinite_carrier_emitted": 0,
+    "explicit_model_emitted": 0,
+    "independent_certificate_accepted": 0,
+    "judge_calls": 0,
+    "source_implication_proved": 81
+  },
+  "input": {
+    "duplicate_ids": 0,
+    "extra_ids": 0,
+    "missing_ids": 0,
+    "public_order_matches_input": true,
+    "raw_order_matches_input": false,
+    "records": 4271,
+    "unique_ids": 4271
+  },
+  "public_artifacts": {
+    "focus28_streams": {
+      "bytes": 127297,
+      "rows": 28,
+      "sha256": "7afac5b51b1e1ea58278e8c8d4b37d0eeaeb836fb4c4b038db74fdaa3e74a27a",
+      "uncompressed_bytes": 294717
+    },
+    "per_problem_results": {
+      "bytes": 656578,
+      "rows": 4271,
+      "sha256": "f0526cf2edd947ae1d8f0438539849c8c1e63f571efcfe4b4c63ff1bc70fa931",
+      "uncompressed_bytes": 10772331
+    },
+    "status_evidence_streams": {
+      "bytes": 1725586,
+      "rows": 103,
+      "sha256": "b137b9ef6064cefa82de48836610a4e3bd3c995291085c484ae39d5855f3728f",
+      "uncompressed_bytes": 2452327
+    }
+  },
+  "raw_counter_status_rows": 22,
+  "raw_source": {
+    "bytes": 49079985,
+    "committed": false,
+    "note": "The private controller file is not committed. Public rows retain every stream hash and byte count; full payloads are retained for all decisive rows, every raw counter-status row, and the frozen 28-problem focus subset.",
+    "sha256": "147bfa5f0f331211be1b0ef25a3116e39e38eca16ea38e4e01c58728e76e6823"
+  },
+  "resource_statistics": {
+    "all_problems": {
+      "cleanup_seconds": {
+        "count": 4271,
+        "max": 0.005289,
+        "mean": 0.000307,
+        "p50": 0.000228,
+        "p90": 0.000277,
+        "p95": 0.000311,
+        "p99": 0.003229
+      },
+      "overall_wall_seconds": {
+        "count": 4271,
+        "max": 120.427667,
+        "mean": 100.658596,
+        "p50": 120.061611,
+        "p90": 120.098877,
+        "p95": 120.11712,
+        "p99": 120.165003
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 4271,
+        "max": 2119749632.0,
+        "mean": 753165623.923203,
+        "p50": 317558784.0,
+        "p90": 2098442240.0,
+        "p95": 2099990528.0,
+        "p99": 2109248307.2
+      },
+      "solver_wall_seconds": {
+        "count": 4271,
+        "max": 120.167016,
+        "mean": 100.637199,
+        "p50": 120.039552,
+        "p90": 120.078256,
+        "p95": 120.095786,
+        "p99": 120.132529
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 4271,
+        "max": 0.344641,
+        "mean": 0.02109,
+        "p50": 0.016864,
+        "p90": 0.034466,
+        "p95": 0.045013,
+        "p99": 0.110053
+      }
+    },
+    "decisive_problems": {
+      "cleanup_seconds": {
+        "count": 103,
+        "max": 0.000351,
+        "mean": 0.000249,
+        "p50": 0.000256,
+        "p90": 0.000305,
+        "p95": 0.000319,
+        "p99": 0.000339
+      },
+      "overall_wall_seconds": {
+        "count": 103,
+        "max": 114.793039,
+        "mean": 17.360923,
+        "p50": 2.108689,
+        "p90": 49.713453,
+        "p95": 89.682268,
+        "p99": 105.836145
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 103,
+        "max": 771989504.0,
+        "mean": 84718761.009709,
+        "p50": 36298752.0,
+        "p90": 197573017.6,
+        "p95": 489937715.199998,
+        "p99": 770050785.28
+      },
+      "solver_wall_seconds": {
+        "count": 103,
+        "max": 114.742535,
+        "mean": 17.324873,
+        "p50": 2.093336,
+        "p90": 49.631655,
+        "p95": 89.580334,
+        "p99": 105.794292
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 103,
+        "max": 0.245623,
+        "mean": 0.035801,
+        "p50": 0.01993,
+        "p90": 0.079375,
+        "p95": 0.156014,
+        "p99": 0.243461
+      }
+    },
+    "memory_definition": {
+      "internal_limit_mib": 2000,
+      "limitation": "A transient peak between samples can be missed; cgroup OOM counters and a near-limit SIGKILL fallback classify such kills.",
+      "metric": "sampled aggregate process-group RSS",
+      "sample_interval_seconds": 0.05,
+      "sandbox_limit_mib": 2048,
+      "scope": "complete solver process group"
+    },
+    "nondecisive_problems": {
+      "cleanup_seconds": {
+        "count": 4168,
+        "max": 0.005289,
+        "mean": 0.000308,
+        "p50": 0.000228,
+        "p90": 0.000275,
+        "p95": 0.00031,
+        "p99": 0.003254
+      },
+      "overall_wall_seconds": {
+        "count": 4168,
+        "max": 120.427667,
+        "mean": 102.717056,
+        "p50": 120.06277,
+        "p90": 120.099651,
+        "p95": 120.117903,
+        "p99": 120.165691
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 4168,
+        "max": 2119749632.0,
+        "mean": 769684344.383877,
+        "p50": 327024640.0,
+        "p90": 2098479104.0,
+        "p95": 2100099686.4,
+        "p99": 2109372825.6
+      },
+      "solver_wall_seconds": {
+        "count": 4168,
+        "max": 120.167016,
+        "mean": 102.696021,
+        "p50": 120.040429,
+        "p90": 120.078876,
+        "p95": 120.096588,
+        "p99": 120.132966
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 4168,
+        "max": 0.344641,
+        "mean": 0.020727,
+        "p50": 0.016841,
+        "p90": 0.033285,
+        "p95": 0.04356,
+        "p99": 0.106019
+      }
+    }
+  },
+  "schema": "same-resource-atp-tool-summary-v1",
+  "status_counts": {
+    "counter_satisfiable": 22,
+    "memory_limit": 852,
+    "resource_exhausted": 3316,
+    "theorem": 81
+  },
+  "status_counts_by_dataset": {
+    "alps4141": {
+      "counter_satisfiable": 4,
+      "memory_limit": 832,
+      "resource_exhausted": 3226,
+      "theorem": 79
+    },
+    "austin96": {
+      "counter_satisfiable": 6,
+      "memory_limit": 20,
+      "resource_exhausted": 68,
+      "theorem": 2
+    },
+    "generality34": {
+      "counter_satisfiable": 12,
+      "resource_exhausted": 22
+    }
+  },
+  "tool": "twee_complete",
+  "trusted_counter_satisfiable_rows": 22
+}

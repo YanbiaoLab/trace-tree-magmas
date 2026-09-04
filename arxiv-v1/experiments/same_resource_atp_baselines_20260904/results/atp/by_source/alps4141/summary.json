@@ -1,0 +1,48 @@
+{
+  "paper_dataset": "alps4141",
+  "record_id_unions": {
+    "counter_satisfiable": 4,
+    "theorem": 94,
+    "theorem_and_counter_satisfiable_conflicts": 0
+  },
+  "records": 4141,
+  "schema": "same-resource-atp-source-summary-v1",
+  "tool_results": {
+    "eprover": {
+      "bytes": 615801,
+      "records": 4141,
+      "sha256": "2bf5e2c45c4ed7f471ba3cd9b92d6ac385873888f97e7f86ba32fa24ad016acc",
+      "status_counts": {
+        "completed_no_proof": 1,
+        "memory_limit": 1,
+        "resource_exhausted": 4085,
+        "theorem": 54
+      },
+      "uncompressed_bytes": 10687391
+    },
+    "twee_complete": {
+      "bytes": 637213,
+      "records": 4141,
+      "sha256": "a0e01fdbec2465a6255138185070e1498f9b72b7c5f0864b31faa4d3b36daa20",
+      "status_counts": {
+        "counter_satisfiable": 4,
+        "memory_limit": 832,
+        "resource_exhausted": 3226,
+        "theorem": 79
+      },
+      "uncompressed_bytes": 10442869
+    },
+    "vampire": {
+      "bytes": 642077,
+      "records": 4141,
+      "sha256": "4074b9951880731c38fe5da80fa7b7aea363e65df3f84bd3e915a6aa5deae5ac",
+      "status_counts": {
+        "completed_no_decisive_result": 84,
+        "memory_limit": 3149,
+        "resource_exhausted": 880,
+        "theorem": 28
+      },
+      "uncompressed_bytes": 11357543
+    }
+  }
+}

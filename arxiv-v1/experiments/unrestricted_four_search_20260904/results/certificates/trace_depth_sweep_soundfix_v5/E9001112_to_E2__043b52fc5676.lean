@@ -1,0 +1,1011 @@
+import Lean.Elab.Tactic.Omega
+import JudgeProblem
+set_option maxRecDepth 100000
+set_option maxHeartbeats 1000000
+namespace submission
+inductive CM where
+  | e : CM
+  | k : CM → CM
+  | p : CM → CM → CM
+deriving DecidableEq
+namespace CM
+def L : CM → CM | e => e | k _ => e | p a _ => a
+def R : CM → CM | e => e | k _ => e | p _ b => b
+def U : CM → CM | e => e | k a => a | p _ _ => e
+def sz : CM → Nat
+  | e => 0
+  | k a => sz a + 1
+  | p a b => (sz a + 1) + (sz b + 1)
+theorem sz_lt_p_left (a b : CM) : sz a < sz (p a b) := by
+  change sz a < (sz a + 1) + (sz b + 1)
+  exact Nat.lt_of_lt_of_le (Nat.lt_succ_self (sz a))
+    (Nat.le_add_right (sz a + 1) (sz b + 1))
+theorem sz_lt_p_right (a b : CM) : sz b < sz (p a b) := by
+  change sz b < (sz a + 1) + (sz b + 1)
+  exact Nat.lt_of_lt_of_le (Nat.lt_succ_self (sz b))
+    (Nat.le_add_left (sz b + 1) (sz a + 1))
+mutual
+inductive Code : CM → CM → CM → Prop
+  | law (x v0 v1 v2 H0 H1 H2 : CM)
+      (s0 : Step v1 v2 H0)
+      (s1 : Step v0 H0 H1)
+      (s2 : Step v0 x H2) :
+      Code (p (p H1 v0) (p (p v0 v0) H2)) v0 x
+inductive Step : CM → CM → CM → Prop
+  | raw (a b : CM) : Step a b (p a b)
+  | hit {a b o : CM} (h : Code a b o) : Step a b o
+end
+theorem code_shape {a b o : CM} (h : Code a b o) :
+    ∃ q_x q_v0 q_v1 q_v2 q_H0 q_H1 q_H2 : CM, Step q_v1 q_v2 q_H0 ∧ Step q_v0 q_H0 q_H1 ∧ Step q_v0 q_x q_H2 ∧ a = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) ∧ b = q_v0 ∧ o = q_x := by
+  exact match h with
+  | .law x v0 v1 v2 H0 H1 H2 s0 s1 s2 => ⟨x, v0, v1, v2, H0, H1, H2, s0, s1, s2, rfl, rfl, rfl⟩
+def getKey (c : CM) : CM := (R (L c))
+theorem code_key {a b o : CM} (h : Code a b o) : getKey a = b := by
+  cases h <;> rfl
+theorem code_key_unique {a b q o : CM} (h : Code a b o) (k : Code a q o) : b = q :=
+  (code_key h).symm.trans (code_key k)
+theorem code_key_small {a b o : CM} (h : Code a b o) : sz b < sz a := by
+  rcases code_shape h with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, s0, s1, s2, ha, hb, ho⟩
+  subst a
+  subst b
+  exact Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2))
+theorem code_bounds {a b o : CM} (h : Code a b o) :
+    sz b < sz a ∧ sz o < sz a := by
+  rcases code_shape h with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, s0, s1, s2, ha, hb, ho⟩
+  subst a
+  subst b
+  subst o
+  constructor
+  · exact Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2))
+  ·
+    cases s2 with
+    | raw =>
+      exact Nat.lt_trans (Nat.lt_trans (sz_lt_p_right q_v0 q_x) (sz_lt_p_right (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_right (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x)))
+    | hit h2 =>
+      exact Nat.lt_trans (code_key_small h2) (Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)))
+theorem step_second_unique {a b q o : CM} (h : Step a b o) (k : Step a q o) : b = q := by
+  cases h with
+  | raw =>
+    cases k with
+    | raw => rfl
+    | hit hc =>
+      have hb := code_bounds hc
+      have hp := sz_lt_p_left a b
+      exact (Nat.not_lt_of_ge (Nat.le_of_lt hp) hb.2).elim
+  | hit hc =>
+    cases k with
+    | raw =>
+      have hb := code_bounds hc
+      have hp := sz_lt_p_left a q
+      exact (Nat.not_lt_of_ge (Nat.le_of_lt hp) hb.2).elim
+    | hit hk => exact code_key_unique hc hk
+theorem code_unique {a b o q : CM} (h : Code a b o) (k : Code a b q) : o = q := by
+  rcases code_shape h with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, hs0, hs1, hs2, ha, hb, ho⟩
+  rcases code_shape k with ⟨r_q_x, r_q_v0, r_q_v1, r_q_v2, r_q_H0, r_q_H1, r_q_H2, rs0, rs1, rs2, ka, kb, ko⟩
+  have et := congrArg (fun z => (R (R z))) (ha.symm.trans ka)
+  have eo := congrArg (fun z => (R (L z))) (ha.symm.trans ka)
+  change q_H2 = r_q_H2 at et
+  change q_v0 = r_q_v0 at eo
+  rw [eo.symm, et.symm] at rs2
+  have er := step_second_unique hs2 rs2
+  have ex : q_x = r_q_x := er
+  exact ho.trans (ex.trans ko.symm)
+theorem step_ne_first {a b : CM} : ¬ Step a b a := by
+  intro h
+  cases h with
+  | hit hc =>
+    have hb := (code_bounds hc).2
+    omega
+theorem step_bound {a b o : CM} (h : Step a b o) :
+    sz b < sz (p o a) := by
+  cases h with
+  | raw => simp [sz] <;> omega
+  | hit hc =>
+    have hb := (code_bounds hc).1
+    simp [sz] at hb ⊢ <;> omega
+
+noncomputable def eval (a b : CM) : CM := by
+  classical
+  exact if h : ∃ o, Code a b o then Classical.choose h else p a b
+theorem eval_hit {{a b o : CM}} (h : Code a b o) : eval a b = o := by
+  rw [eval, dif_pos ⟨o, h⟩]
+  exact code_unique (Classical.choose_spec ⟨o, h⟩) h
+theorem eval_raw {{a b : CM}} (h : ¬ ∃ o, Code a b o) : eval a b = p a b := by
+  rw [eval, dif_neg h]
+theorem eval_step (a b : CM) : Step a b (eval a b) := by
+  by_cases h : ∃ o, Code a b o
+  · rcases h with ⟨o, hc⟩
+    rw [eval_hit hc]
+    exact Step.hit hc
+  · rw [eval_raw h]
+    exact Step.raw a b
+theorem code_no_pair_left (v k : CM) :
+    ¬ ∃ o, Code (p v k) v o := by
+  rintro ⟨o, hc⟩
+  rcases code_shape hc with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, qs0, qs1, qs2, ha, hb, ho⟩
+  have qs0B := step_bound qs0
+  cases qs0 with
+  | raw =>
+    have qs1B := step_bound qs1
+    cases qs1 with
+    | raw =>
+      have qs2B := step_bound qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := (let peq0 : v = (p (p q_v0 (p q_v1 q_v2)) q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = v := Eq.symm (peq0); let pst1 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_v0 (p q_v1 q_v2)) q_v0) := Nat.lt_trans (sz_lt_p_left q_v0 (p q_v1 q_v2)) (sz_lt_p_left (p q_v0 (p q_v1 q_v2)) q_v0)
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) q_H2) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := (let peq0 : v = (p (p q_v0 (p q_v1 q_v2)) q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = v := Eq.symm (peq0); let pst1 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_v0 (p q_v1 q_v2)) q_v0) := Nat.lt_trans (sz_lt_p_left q_v0 (p q_v1 q_v2)) (sz_lt_p_left (p q_v0 (p q_v1 q_v2)) q_v0)
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit qs1h =>
+      have qs2B := step_bound qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p q_H1 q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p q_H1 q_v0) := (let peq0 : v = (p q_H1 q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_H1 q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p q_H1 q_v0) := sz_lt_p_right q_H1 q_v0
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p q_H1 q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) q_H2) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p q_H1 q_v0) := (let peq0 : v = (p q_H1 q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_H1 q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p q_H1 q_v0) := sz_lt_p_right q_H1 q_v0
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+  | hit qs0h =>
+    have qs1B := step_bound qs1
+    cases qs1 with
+    | raw =>
+      have qs2B := step_bound qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p (p q_v0 q_H0) q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p (p q_v0 q_H0) q_v0) := (let peq0 : v = (p (p q_v0 q_H0) q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p (p q_v0 q_H0) q_v0) = v := Eq.symm (peq0); let pst1 : (p (p q_v0 q_H0) q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p (p q_v0 q_H0) q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_v0 q_H0) q_v0) := Nat.lt_trans (sz_lt_p_left q_v0 q_H0) (sz_lt_p_left (p q_v0 q_H0) q_v0)
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p (p q_v0 q_H0) q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) q_H2) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p (p q_v0 q_H0) q_v0) := (let peq0 : v = (p (p q_v0 q_H0) q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p (p q_v0 q_H0) q_v0) = v := Eq.symm (peq0); let pst1 : (p (p q_v0 q_H0) q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p (p q_v0 q_H0) q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_v0 q_H0) q_v0) := Nat.lt_trans (sz_lt_p_left q_v0 q_H0) (sz_lt_p_left (p q_v0 q_H0) q_v0)
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit qs1h =>
+      have qs2B := step_bound qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p q_H1 q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p q_H1 q_v0) := (let peq0 : v = (p q_H1 q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_H1 q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p q_H1 q_v0) := sz_lt_p_right q_H1 q_v0
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => (L q)) ha
+        change v = (p q_H1 q_v0) at e0
+        have e1 := congrArg (fun q => (R q)) ha
+        change k = (p (p q_v0 q_v0) q_H2) at e1
+        have e2 := congrArg (fun q => q) hb
+        change v = q_v0 at e2
+        have cyc : q_v0 = (p q_H1 q_v0) := (let peq0 : v = (p q_H1 q_v0) := e0; let peq2 : v = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = q_v0 := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_H1 q_v0) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p q_H1 q_v0) := sz_lt_p_right q_H1 q_v0
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+theorem step_no_first {a b o : CM} (st : Step a b o) :
+    ¬ ∃ u, Code o a u := by
+  cases st with
+  | raw => exact code_no_pair_left a b
+  | hit sh =>
+    rintro ⟨u, hk⟩
+    have ho := (code_bounds sh).2
+    have ha := (code_bounds hk).1
+    omega
+theorem nr0 (x v0 v1 v2 H1 : CM)
+    (s1 : Step v0 H0 H1) :
+    ¬ ∃ o, Code H1 v0 o := by
+  exact step_no_first s1
+
+theorem nr1 (x v0 v1 v2 : CM)
+ :
+    ¬ ∃ o, Code v0 v0 o := by
+  rintro ⟨o, hc⟩
+  rcases code_shape hc with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, qs0, qs1, qs2, ha, hb, ho⟩
+  have qs0B := step_bound qs0
+  have qs0N := step_no_first qs0
+  cases qs0 with
+  | raw =>
+    have qs1B := step_bound qs1
+    have qs1N := step_no_first qs1
+    cases qs1 with
+    | raw =>
+      have qs2B := step_bound qs2
+      have qs2N := step_no_first qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := (let peq0 : v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = v0 := Eq.symm (peq0); let pst1 : (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 (p q_v1 q_v2)) (sz_lt_p_left (p q_v0 (p q_v1 q_v2)) q_v0)) (sz_lt_p_left (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x)))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) := (let peq0 : v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) = v0 := Eq.symm (peq0); let pst1 : (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2)) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 (p q_v1 q_v2)) (sz_lt_p_left (p q_v0 (p q_v1 q_v2)) q_v0)) (sz_lt_p_left (p (p q_v0 (p q_v1 q_v2)) q_v0) (p (p q_v0 q_v0) q_H2))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit qs1h =>
+      have qs2B := step_bound qs2
+      have qs2N := step_no_first qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := (let peq0 : v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = v0 := Eq.symm (peq0); let pst1 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x)))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := (let peq0 : v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) = v0 := Eq.symm (peq0); let pst1 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+  | hit qs0h =>
+    have qs1B := step_bound qs1
+    have qs1N := step_no_first qs1
+    cases qs1 with
+    | raw =>
+      have qs2B := step_bound qs2
+      have qs2N := step_no_first qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := (let peq0 : v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = v0 := Eq.symm (peq0); let pst1 : (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_H0) (sz_lt_p_left (p q_v0 q_H0) q_v0)) (sz_lt_p_left (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) (p q_v0 q_x)))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) := (let peq0 : v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) = v0 := Eq.symm (peq0); let pst1 : (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2)) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_H0) (sz_lt_p_left (p q_v0 q_H0) q_v0)) (sz_lt_p_left (p (p q_v0 q_H0) q_v0) (p (p q_v0 q_v0) q_H2))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit qs1h =>
+      have qs2B := step_bound qs2
+      have qs2N := step_no_first qs2
+      cases qs2 with
+      | raw =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := (let peq0 : v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = v0 := Eq.symm (peq0); let pst1 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x))) := Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) (p q_v0 q_x)))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs2h =>
+        have e0 := congrArg (fun q => q) ha
+        change v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) at e0
+        have e1 := congrArg (fun q => q) hb
+        change v0 = q_v0 at e1
+        have cyc : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := (let peq0 : v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := e0; let peq1 : v0 = q_v0 := e1; let pst0 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) = v0 := Eq.symm (peq0); let pst1 : (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) = q_v0 := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := Eq.symm (pst1); pst2)
+        have hlt : sz q_v0 < sz (p (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2)) := Nat.lt_trans (sz_lt_p_right q_H1 q_v0) (sz_lt_p_left (p q_H1 q_v0) (p (p q_v0 q_v0) q_H2))
+        exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+theorem nr2 (x v0 v1 v2 H2 : CM)
+    (s2 : Step v0 x H2) :
+    ¬ ∃ o, Code (p v0 v0) H2 o := by
+  rintro ⟨o, hc⟩
+  rcases code_shape hc with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, qs0, qs1, qs2, ha, hb, ho⟩
+  have s2B := step_bound s2
+  have s2N := step_no_first s2
+  cases s2 with
+  | raw =>
+    have qs0B := step_bound qs0
+    have qs0N := step_no_first qs0
+    cases qs0 with
+    | raw =>
+      have qs1B := step_bound qs1
+      have qs1N := step_no_first qs1
+      cases qs1 with
+      | raw =>
+        have qs2B := step_bound qs2
+        have qs2N := step_no_first qs2
+        cases qs2 with
+        | raw =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_v1 = (p q_v1 q_v2) := (let peq0 : v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let pst0 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq1); let pst2 : (p q_v0 (p q_v1 q_v2)) = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst3 : (p q_v1 q_v2) = q_v0 := congrArg (fun q => R q) (pst2); let pst4 : q_v0 = (p q_v1 q_v2) := Eq.symm (pst3); let pst5 : (p q_v1 q_v2) = q_v0 := Eq.symm (pst4); let pst6 : q_v0 = (p q_v0 q_x) := congrArg (fun q => R q) (pst1); let pst7 : (p q_v1 q_v2) = (p q_v0 q_x) := Eq.trans (pst5) (pst6); let pst8 : (p q_v0 q_x) = (p (p q_v1 q_v2) q_x) := congrArg (fun q => p q q_x) (pst4); let pst9 : (p q_v1 q_v2) = (p (p q_v1 q_v2) q_x) := Eq.trans (pst7) (pst8); let pst10 : q_v1 = (p q_v1 q_v2) := congrArg (fun q => L q) (pst9); pst10)
+          have hlt : sz q_v1 < sz (p q_v1 q_v2) := sz_lt_p_left q_v1 q_v2
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs2h =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) q_H2) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_v1 = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := (let peq0 : v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p v0 x) = q_v0 := e2; let pst0 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : (p q_v0 (p q_v1 q_v2)) = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst3 : (p q_v1 q_v2) = q_v0 := congrArg (fun q => R q) (pst2); let pst4 : q_v0 = (p q_v1 q_v2) := Eq.symm (pst3); let pst5 : (p q_v0 (p q_v1 q_v2)) = (p (p q_v1 q_v2) (p q_v1 q_v2)) := congrArg (fun q => p q (p q_v1 q_v2)) (pst4); let pst6 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) q_v0) := congrArg (fun q => p q q_v0) (pst5); let pst7 : (p (p (p q_v1 q_v2) (p q_v1 q_v2)) q_v0) = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := congrArg (fun q => p (p (p q_v1 q_v2) (p q_v1 q_v2)) q) (pst4); let pst8 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := Eq.trans (pst6) (pst7); let pst9 : v0 = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := Eq.trans (peq0) (pst8); let pst10 : (p v0 x) = (p (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) x) := congrArg (fun q => p q x) (pst9); let pst11 : (p (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) x) = (p v0 x) := Eq.symm (pst10); let pst12 : (p (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) x) = q_v0 := Eq.trans (pst11) (peq2); let pst13 : (p (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) x) = (p q_v1 q_v2) := Eq.trans (pst12) (pst4); let pst14 : (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) = q_v1 := congrArg (fun q => L q) (pst13); let pst15 : q_v1 = (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := Eq.symm (pst14); pst15)
+          have hlt : sz q_v1 < sz (p (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2)) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v1 q_v2) (sz_lt_p_left (p q_v1 q_v2) (p q_v1 q_v2))) (sz_lt_p_left (p (p q_v1 q_v2) (p q_v1 q_v2)) (p q_v1 q_v2))
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs1h =>
+        have qs2B := step_bound qs2
+        have qs2N := step_no_first qs2
+        cases qs2 with
+        | raw =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p q_H1 q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_v0 = (p q_v0 q_x) := (let peq0 : v0 = (p q_H1 q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p q_v0 q_x) := congrArg (fun q => R q) (pst1); pst2)
+          have hlt : sz q_v0 < sz (p q_v0 q_x) := sz_lt_p_left q_v0 q_x
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs2h =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p q_H1 q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) q_H2) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := (let peq0 : v0 = (p q_H1 q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p v0 x) = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_H1 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst3 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst4 : (p q_v0 q_v0) = (p q_H2 q_v0) := congrArg (fun q => p q q_v0) (pst3); let pst5 : (p q_H2 q_v0) = (p q_H2 q_H2) := congrArg (fun q => p q_H2 q) (pst3); let pst6 : (p q_v0 q_v0) = (p q_H2 q_H2) := Eq.trans (pst4) (pst5); let pst7 : q_H1 = (p q_H2 q_H2) := Eq.trans (pst2) (pst6); let pst8 : (p q_H1 q_v0) = (p (p q_H2 q_H2) q_v0) := congrArg (fun q => p q q_v0) (pst7); let pst9 : (p (p q_H2 q_H2) q_v0) = (p (p q_H2 q_H2) q_H2) := congrArg (fun q => p (p q_H2 q_H2) q) (pst3); let pst10 : (p q_H1 q_v0) = (p (p q_H2 q_H2) q_H2) := Eq.trans (pst8) (pst9); let pst11 : v0 = (p (p q_H2 q_H2) q_H2) := Eq.trans (peq0) (pst10); let pst12 : (p v0 x) = (p (p (p q_H2 q_H2) q_H2) x) := congrArg (fun q => p q x) (pst11); let pst13 : (p (p (p q_H2 q_H2) q_H2) x) = (p v0 x) := Eq.symm (pst12); let pst14 : (p (p (p q_H2 q_H2) q_H2) x) = q_v0 := Eq.trans (pst13) (peq2); let pst15 : (p (p (p q_H2 q_H2) q_H2) x) = q_H2 := Eq.trans (pst14) (pst3); let pst16 : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := Eq.symm (pst15); pst16)
+          have hlt : sz q_H2 < sz (p (p (p q_H2 q_H2) q_H2) x) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_H2 q_H2) (sz_lt_p_left (p q_H2 q_H2) q_H2)) (sz_lt_p_left (p (p q_H2 q_H2) q_H2) x)
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit qs0h =>
+      have qs1B := step_bound qs1
+      have qs1N := step_no_first qs1
+      cases qs1 with
+      | raw =>
+        have qs2B := step_bound qs2
+        have qs2N := step_no_first qs2
+        cases qs2 with
+        | raw =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p (p q_v0 q_H0) q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_v0 = (p q_v0 q_x) := (let peq0 : v0 = (p (p q_v0 q_H0) q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let pst0 : (p (p q_v0 q_H0) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 q_H0) q_v0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p q_v0 q_x) := congrArg (fun q => R q) (pst1); pst2)
+          have hlt : sz q_v0 < sz (p q_v0 q_x) := sz_lt_p_left q_v0 q_x
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs2h =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p (p q_v0 q_H0) q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) q_H2) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := (let peq0 : v0 = (p (p q_v0 q_H0) q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p v0 x) = q_v0 := e2; let pst0 : (p (p q_v0 q_H0) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 q_H0) q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst3 : (p q_v0 q_H0) = (p q_H2 q_H0) := congrArg (fun q => p q q_H0) (pst2); let pst4 : (p q_v0 q_H0) = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst5 : q_H0 = q_v0 := congrArg (fun q => R q) (pst4); let pst6 : q_H0 = q_H2 := Eq.trans (pst5) (pst2); let pst7 : (p q_H2 q_H0) = (p q_H2 q_H2) := congrArg (fun q => p q_H2 q) (pst6); let pst8 : (p q_v0 q_H0) = (p q_H2 q_H2) := Eq.trans (pst3) (pst7); let pst9 : (p (p q_v0 q_H0) q_v0) = (p (p q_H2 q_H2) q_v0) := congrArg (fun q => p q q_v0) (pst8); let pst10 : (p (p q_H2 q_H2) q_v0) = (p (p q_H2 q_H2) q_H2) := congrArg (fun q => p (p q_H2 q_H2) q) (pst2); let pst11 : (p (p q_v0 q_H0) q_v0) = (p (p q_H2 q_H2) q_H2) := Eq.trans (pst9) (pst10); let pst12 : v0 = (p (p q_H2 q_H2) q_H2) := Eq.trans (peq0) (pst11); let pst13 : (p v0 x) = (p (p (p q_H2 q_H2) q_H2) x) := congrArg (fun q => p q x) (pst12); let pst14 : (p (p (p q_H2 q_H2) q_H2) x) = (p v0 x) := Eq.symm (pst13); let pst15 : (p (p (p q_H2 q_H2) q_H2) x) = q_v0 := Eq.trans (pst14) (peq2); let pst16 : (p (p (p q_H2 q_H2) q_H2) x) = q_H2 := Eq.trans (pst15) (pst2); let pst17 : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := Eq.symm (pst16); pst17)
+          have hlt : sz q_H2 < sz (p (p (p q_H2 q_H2) q_H2) x) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_H2 q_H2) (sz_lt_p_left (p q_H2 q_H2) q_H2)) (sz_lt_p_left (p (p q_H2 q_H2) q_H2) x)
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs1h =>
+        have qs2B := step_bound qs2
+        have qs2N := step_no_first qs2
+        cases qs2 with
+        | raw =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p q_H1 q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_v0 = (p q_v0 q_x) := (let peq0 : v0 = (p q_H1 q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = (p q_v0 q_x) := congrArg (fun q => R q) (pst1); pst2)
+          have hlt : sz q_v0 < sz (p q_v0 q_x) := sz_lt_p_left q_v0 q_x
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs2h =>
+          have e0 := congrArg (fun q => (L q)) ha
+          change v0 = (p q_H1 q_v0) at e0
+          have e1 := congrArg (fun q => (R q)) ha
+          change v0 = (p (p q_v0 q_v0) q_H2) at e1
+          have e2 := congrArg (fun q => q) hb
+          change (p v0 x) = q_v0 at e2
+          have cyc : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := (let peq0 : v0 = (p q_H1 q_v0) := e0; let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p v0 x) = q_v0 := e2; let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_H1 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst3 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst4 : (p q_v0 q_v0) = (p q_H2 q_v0) := congrArg (fun q => p q q_v0) (pst3); let pst5 : (p q_H2 q_v0) = (p q_H2 q_H2) := congrArg (fun q => p q_H2 q) (pst3); let pst6 : (p q_v0 q_v0) = (p q_H2 q_H2) := Eq.trans (pst4) (pst5); let pst7 : q_H1 = (p q_H2 q_H2) := Eq.trans (pst2) (pst6); let pst8 : (p q_H1 q_v0) = (p (p q_H2 q_H2) q_v0) := congrArg (fun q => p q q_v0) (pst7); let pst9 : (p (p q_H2 q_H2) q_v0) = (p (p q_H2 q_H2) q_H2) := congrArg (fun q => p (p q_H2 q_H2) q) (pst3); let pst10 : (p q_H1 q_v0) = (p (p q_H2 q_H2) q_H2) := Eq.trans (pst8) (pst9); let pst11 : v0 = (p (p q_H2 q_H2) q_H2) := Eq.trans (peq0) (pst10); let pst12 : (p v0 x) = (p (p (p q_H2 q_H2) q_H2) x) := congrArg (fun q => p q x) (pst11); let pst13 : (p (p (p q_H2 q_H2) q_H2) x) = (p v0 x) := Eq.symm (pst12); let pst14 : (p (p (p q_H2 q_H2) q_H2) x) = q_v0 := Eq.trans (pst13) (peq2); let pst15 : (p (p (p q_H2 q_H2) q_H2) x) = q_H2 := Eq.trans (pst14) (pst3); let pst16 : q_H2 = (p (p (p q_H2 q_H2) q_H2) x) := Eq.symm (pst15); pst16)
+          have hlt : sz q_H2 < sz (p (p (p q_H2 q_H2) q_H2) x) := Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_H2 q_H2) (sz_lt_p_left (p q_H2 q_H2) q_H2)) (sz_lt_p_left (p (p q_H2 q_H2) q_H2) x)
+          exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+  | hit s2h =>
+    have qs0B := step_bound qs0
+    have qs0N := step_no_first qs0
+    cases qs0 with
+    | raw =>
+      have qs1B := step_bound qs1
+      have qs1N := step_no_first qs1
+      cases qs1 with
+      | raw =>
+        have he : q_H2 = q_v0 := (let peq0 : v0 = (p (p q_v0 (p q_v1 q_v2)) q_v0) := congrArg (fun q => (L q)) (ha); let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := congrArg (fun q => (R q)) (ha); let pst0 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 (p q_v1 q_v2)) q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : (p q_v0 (p q_v1 q_v2)) = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); let pst3 : (p q_v1 q_v2) = q_v0 := congrArg (fun q => R q) (pst2); let pst4 : q_v0 = (p q_v1 q_v2) := Eq.symm (pst3); let pst5 : (p q_v1 q_v2) = q_v0 := Eq.symm (pst4); let pst6 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst7 : (p q_v1 q_v2) = q_H2 := Eq.trans (pst5) (pst6); let pst8 : q_H2 = (p q_v1 q_v2) := Eq.symm (pst7); let pst9 : (p q_v1 q_v2) = q_v0 := Eq.symm (pst4); let pst10 : q_H2 = q_v0 := Eq.trans (pst8) (pst9); pst10)
+        exact step_ne_first (by simpa only [he] using qs2)
+      | hit qs1h =>
+        have he : q_H2 = q_v0 := (let peq0 : v0 = (p q_H1 q_v0) := congrArg (fun q => (L q)) (ha); let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := congrArg (fun q => (R q)) (ha); let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst3 : q_H2 = q_v0 := Eq.symm (pst2); pst3)
+        exact step_ne_first (by simpa only [he] using qs2)
+    | hit qs0h =>
+      have qs1B := step_bound qs1
+      have qs1N := step_no_first qs1
+      cases qs1 with
+      | raw =>
+        have he : q_H2 = q_v0 := (let peq0 : v0 = (p (p q_v0 q_H0) q_v0) := congrArg (fun q => (L q)) (ha); let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := congrArg (fun q => (R q)) (ha); let pst0 : (p (p q_v0 q_H0) q_v0) = v0 := Eq.symm (peq0); let pst1 : (p (p q_v0 q_H0) q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst3 : q_H2 = q_v0 := Eq.symm (pst2); pst3)
+        exact step_ne_first (by simpa only [he] using qs2)
+      | hit qs1h =>
+        have he : q_H2 = q_v0 := (let peq0 : v0 = (p q_H1 q_v0) := congrArg (fun q => (L q)) (ha); let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := congrArg (fun q => (R q)) (ha); let pst0 : (p q_H1 q_v0) = v0 := Eq.symm (peq0); let pst1 : (p q_H1 q_v0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq1); let pst2 : q_v0 = q_H2 := congrArg (fun q => R q) (pst1); let pst3 : q_H2 = q_v0 := Eq.symm (pst2); pst3)
+        exact step_ne_first (by simpa only [he] using qs2)
+theorem nr3 (x v0 v1 v2 H1 H2 : CM)
+    (s1 : Step v0 H0 H1)
+    (s2 : Step v0 x H2) :
+    ¬ ∃ o, Code (p H1 v0) (p (p v0 v0) H2) o := by
+  rintro ⟨o, hc⟩
+  rcases code_shape hc with ⟨q_x, q_v0, q_v1, q_v2, q_H0, q_H1, q_H2, qs0, qs1, qs2, ha, hb, ho⟩
+  have s1B := step_bound s1
+  have s1N := step_no_first s1
+  cases s1 with
+  | raw =>
+    have s2B := step_bound s2
+    have s2N := step_no_first s2
+    cases s2 with
+    | raw =>
+      have qs0B := step_bound qs0
+      have qs0N := step_no_first qs0
+      cases qs0 with
+      | raw =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 (p q_v1 q_v2)) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 (p q_v1 q_v2)) := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let pst0 : (p q_v0 (p q_v1 q_v2)) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 (p q_v1 q_v2)) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 (p q_v1 q_v2)) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 (p q_v1 q_v2)) := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let pst0 : (p q_v0 (p q_v1 q_v2)) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 (p q_v1 q_v2)) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let peq3 : (p (p v0 v0) (p v0 x)) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst6); let pst8 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst9 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (pst8); let pst10 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst9); let pst11 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst7) (pst10); let pst12 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst11); let pst13 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst12) (peq3); let pst14 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst13); pst14)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let peq3 : (p (p v0 v0) (p v0 x)) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst6); let pst8 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst9 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (pst8); let pst10 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst9); let pst11 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst7) (pst10); let pst12 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst11); let pst13 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst12) (peq3); let pst14 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst13); pst14)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs0h =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 q_H0) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 q_H0) := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let pst0 : (p q_v0 q_H0) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 q_H0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 q_H0) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 q_H0) := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let pst0 : (p q_v0 q_H0) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 q_H0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let peq3 : (p (p v0 v0) (p v0 x)) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst6); let pst8 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst9 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (pst8); let pst10 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst9); let pst11 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst7) (pst10); let pst12 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst11); let pst13 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst12) (peq3); let pst14 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst13); pst14)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let peq3 : (p (p v0 v0) (p v0 x)) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst6); let pst8 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst9 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (pst8); let pst10 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst9); let pst11 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst7) (pst10); let pst12 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst11); let pst13 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst12) (peq3); let pst14 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst13); pst14)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit s2h =>
+      have qs0B := step_bound qs0
+      have qs0N := step_no_first qs0
+      cases qs0 with
+      | raw =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 (p q_v1 q_v2)) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 (p q_v1 q_v2)) := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let pst0 : (p q_v0 (p q_v1 q_v2)) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 (p q_v1 q_v2)) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 (p q_v1 q_v2)) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 (p q_v1 q_v2)) := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let pst0 : (p q_v0 (p q_v1 q_v2)) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 (p q_v1 q_v2)) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let peq3 : (p (p v0 v0) H2) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst7); let pst9 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst8) (peq3); let pst10 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst9); pst10)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let peq3 : (p (p v0 v0) H2) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst7); let pst9 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst8) (peq3); let pst10 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst9); pst10)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs0h =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 q_H0) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 q_H0) := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let pst0 : (p q_v0 q_H0) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 q_H0) = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = (p q_v0 q_H0) at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p q_v0 q_v0) := (let peq0 : v0 = (p q_v0 q_H0) := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let pst0 : (p q_v0 q_H0) = v0 := Eq.symm (peq0); let pst1 : (p q_v0 q_H0) = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : q_v0 = (p q_v0 q_v0) := congrArg (fun q => L q) (pst1); pst2)
+            have hlt : sz q_v0 < sz (p q_v0 q_v0) := sz_lt_p_left q_v0 q_v0
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e2; let peq3 : (p (p v0 v0) H2) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst7); let pst9 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst8) (peq3); let pst10 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst9); pst10)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L (L q))) ha
+            change v0 = q_H1 at e0
+            have e1 := congrArg (fun q => (R (L q))) ha
+            change H0 = q_v0 at e1
+            have e2 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e2
+            have e3 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e3
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq0 : v0 = q_H1 := e0; let peq2 : v0 = (p (p q_v0 q_v0) q_H2) := e2; let peq3 : (p (p v0 v0) H2) = q_v0 := e3; let pst0 : q_H1 = v0 := Eq.symm (peq0); let pst1 : q_H1 = (p (p q_v0 q_v0) q_H2) := Eq.trans (pst0) (peq2); let pst2 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst3 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (pst2); let pst4 : v0 = (p (p q_v0 q_v0) q_H2) := Eq.trans (peq0) (pst1); let pst5 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (pst4); let pst6 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst3) (pst5); let pst7 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst7); let pst9 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst8) (peq3); let pst10 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst9); pst10)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+  | hit s1h =>
+    have s2B := step_bound s2
+    have s2N := step_no_first s2
+    cases s2 with
+    | raw =>
+      have qs0B := step_bound qs0
+      have qs0N := step_no_first qs0
+      cases qs0 with
+      | raw =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs0h =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 q_H0) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 q_H0) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) (p (p (p q_v0 q_v0) (p q_v0 q_x)) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) (p v0 x)) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) (p v0 x)) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) := congrArg (fun q => p q (p v0 x)) (pst2); let pst4 : (p v0 x) = (p (p (p q_v0 q_v0) q_H2) x) := congrArg (fun q => p q x) (peq1); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := congrArg (fun q => p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) q) (pst4); let pst6 : (p (p v0 v0) (p v0 x)) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.trans (pst3) (pst5); let pst7 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = (p (p v0 v0) (p v0 x)) := Eq.symm (pst6); let pst8 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) = q_v0 := Eq.trans (pst7) (peq2); let pst9 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Eq.symm (pst8); pst9)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x)) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) (p (p (p q_v0 q_v0) q_H2) x))
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+    | hit s2h =>
+      have qs0B := step_bound qs0
+      have qs0N := step_no_first qs0
+      cases qs0 with
+      | raw =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 (p q_v1 q_v2)) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+      | hit qs0h =>
+        have qs1B := step_bound qs1
+        have qs1N := step_no_first qs1
+        cases qs1 with
+        | raw =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 q_H0) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p (p q_v0 q_H0) q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+        | hit qs1h =>
+          have qs2B := step_bound qs2
+          have qs2N := step_no_first qs2
+          cases qs2 with
+          | raw =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) (p q_v0 q_x)) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) (p q_v0 q_x)) v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := congrArg (fun q => p (p (p q_v0 q_v0) (p q_v0 q_x)) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) (p q_v0 q_x))) (sz_lt_p_left (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x)))) (sz_lt_p_left (p (p (p q_v0 q_v0) (p q_v0 q_x)) (p (p q_v0 q_v0) (p q_v0 q_x))) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+          | hit qs2h =>
+            have e0 := congrArg (fun q => (L q)) ha
+            change H1 = (p q_H1 q_v0) at e0
+            have e1 := congrArg (fun q => (R q)) ha
+            change v0 = (p (p q_v0 q_v0) q_H2) at e1
+            have e2 := congrArg (fun q => q) hb
+            change (p (p v0 v0) H2) = q_v0 at e2
+            have cyc : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := (let peq1 : v0 = (p (p q_v0 q_v0) q_H2) := e1; let peq2 : (p (p v0 v0) H2) = q_v0 := e2; let pst0 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) v0) := congrArg (fun q => p q v0) (peq1); let pst1 : (p (p (p q_v0 q_v0) q_H2) v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := congrArg (fun q => p (p (p q_v0 q_v0) q_H2) q) (peq1); let pst2 : (p v0 v0) = (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) := Eq.trans (pst0) (pst1); let pst3 : (p (p v0 v0) H2) = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := congrArg (fun q => p q H2) (pst2); let pst4 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = (p (p v0 v0) H2) := Eq.symm (pst3); let pst5 : (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) = q_v0 := Eq.trans (pst4) (peq2); let pst6 : q_v0 = (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Eq.symm (pst5); pst6)
+            have hlt : sz q_v0 < sz (p (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2) := Nat.lt_trans (Nat.lt_trans (Nat.lt_trans (sz_lt_p_left q_v0 q_v0) (sz_lt_p_left (p q_v0 q_v0) q_H2)) (sz_lt_p_left (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2))) (sz_lt_p_left (p (p (p q_v0 q_v0) q_H2) (p (p q_v0 q_v0) q_H2)) H2)
+            exact (Nat.ne_of_lt hlt) (congrArg sz cyc)
+theorem source_holds (x v0 v1 v2 : CM) :
+    x = (eval (eval (eval (eval v0 (eval v1 v2)) v0) (eval (eval v0 v0) (eval v0 x))) v0) := by
+  let H0 := eval v1 v2
+  have e0a : v1 = v1 := by
+    change v1 = v1
+    rfl
+  have e0b : v2 = v2 := by
+    change v2 = v2
+    rfl
+  have s0 : Step v1 v2 H0 := by
+    rw [← e0a, ← e0b]
+    exact eval_step v1 v2
+  let H1 := eval v0 (eval v1 v2)
+  have e1a : v0 = v0 := by
+    change v0 = v0
+    rfl
+  have e1b : (eval v1 v2) = H0 := by
+    change H0 = H0
+    rfl
+  have s1 : Step v0 H0 H1 := by
+    rw [← e1a, ← e1b]
+    exact eval_step v0 (eval v1 v2)
+  let H2 := eval v0 x
+  have e2a : v0 = v0 := by
+    change v0 = v0
+    rfl
+  have e2b : x = x := by
+    change x = x
+    rfl
+  have s2 : Step v0 x H2 := by
+    rw [← e2a, ← e2b]
+    exact eval_step v0 x
+  change x = (eval (eval (eval H1 v0) (eval (eval v0 v0) H2)) v0)
+  have rawEq : (eval (eval (eval H1 v0) (eval (eval v0 v0) H2)) v0) = (eval (p (p H1 v0) (p (p v0 v0) H2)) v0) := by
+    calc
+      (eval (eval (eval H1 v0) (eval (eval v0 v0) H2)) v0) = (eval (eval (p H1 v0) (eval (eval v0 v0) H2)) v0) := congrArg (fun q => (eval (eval q (eval (eval v0 v0) H2)) v0)) (eval_raw (nr0 x v0 v1 v2 H1 s1))
+      _ = (eval (eval (p H1 v0) (eval (p v0 v0) H2)) v0) := congrArg (fun q => (eval (eval (p H1 v0) (eval q H2)) v0)) (eval_raw (nr1 x v0 v1 v2))
+      _ = (eval (eval (p H1 v0) (p (p v0 v0) H2)) v0) := congrArg (fun q => (eval (eval (p H1 v0) q) v0)) (eval_raw (nr2 x v0 v1 v2 H2 s2))
+      _ = (eval (p (p H1 v0) (p (p v0 v0) H2)) v0) := congrArg (fun q => (eval q v0)) (eval_raw (nr3 x v0 v1 v2 H1 H2 s1 s2))
+  exact (eval_hit (Code.law x v0 v1 v2 H0 H1 H2 s0 s1 s2)).symm.trans rawEq.symm
+noncomputable instance instMagma2 : Magma CM where op := eval
+end CM
+end submission
+open submission
+open submission.CM
+noncomputable def submission : Goal := by
+  refine ⟨CM, CM.instMagma2, ?_, ?_⟩
+  · intro x v0 v1 v2
+    exact CM.source_holds x v0 v1 v2
+  · intro target
+    have bad := target (CM.k CM.e) CM.e
+    have hl : (CM.k CM.e) = (CM.k CM.e) := rfl
+    have hr : CM.e = CM.e := rfl
+    have bad2 := hl.symm.trans (bad.trans hr)
+    exact Bool.noConfusion (congrArg (fun q => match q with | e => true | k _ => false | p _ _ => false) bad2)

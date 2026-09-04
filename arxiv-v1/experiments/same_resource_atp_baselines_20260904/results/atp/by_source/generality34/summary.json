@@ -1,0 +1,43 @@
+{
+  "paper_dataset": "generality34",
+  "record_id_unions": {
+    "counter_satisfiable": 12,
+    "theorem": 0,
+    "theorem_and_counter_satisfiable_conflicts": 0
+  },
+  "records": 34,
+  "schema": "same-resource-atp-source-summary-v1",
+  "tool_results": {
+    "eprover": {
+      "bytes": 5993,
+      "records": 34,
+      "sha256": "7360d09e403e9c68d4b4c194877a65b47d845e10ad5ea1071cf3994a66481ccc",
+      "status_counts": {
+        "completed_no_proof": 12,
+        "resource_exhausted": 22
+      },
+      "uncompressed_bytes": 88643
+    },
+    "twee_complete": {
+      "bytes": 6023,
+      "records": 34,
+      "sha256": "81abf2b3c4e31ff34826947b44744c526f2b361b8ef48b2fae97b4d71db46068",
+      "status_counts": {
+        "counter_satisfiable": 12,
+        "resource_exhausted": 22
+      },
+      "uncompressed_bytes": 86864
+    },
+    "vampire": {
+      "bytes": 6191,
+      "records": 34,
+      "sha256": "29633c6be64b8511926e013735d5b1b63505172b9f58c11f26f2407dcfb6b7a3",
+      "status_counts": {
+        "completed_no_decisive_result": 12,
+        "memory_limit": 4,
+        "resource_exhausted": 18
+      },
+      "uncompressed_bytes": 94613
+    }
+  }
+}

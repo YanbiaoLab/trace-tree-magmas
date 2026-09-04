@@ -1,0 +1,224 @@
+{
+  "capability_counts": {
+    "complete_tstp_proof_emitted": 28,
+    "explicit_infinite_carrier_emitted": 0,
+    "explicit_model_emitted": 0,
+    "independent_certificate_accepted": 0,
+    "judge_calls": 0,
+    "source_implication_proved": 28
+  },
+  "input": {
+    "duplicate_ids": 0,
+    "extra_ids": 0,
+    "missing_ids": 0,
+    "public_order_matches_input": true,
+    "raw_order_matches_input": true,
+    "records": 4271,
+    "unique_ids": 4271
+  },
+  "public_artifacts": {
+    "focus28_streams": {
+      "bytes": 445335,
+      "rows": 28,
+      "sha256": "282f91c7b42c0e7f068ae8e5ea862d2766ead360a9a1bc2dcc73df09f1c91be0",
+      "uncompressed_bytes": 643318
+    },
+    "per_problem_results": {
+      "bytes": 661589,
+      "rows": 4271,
+      "sha256": "ccf8cfac823f3d2bd8b3e3558117f3964a561dc98e4f2c1f78037c3423e7a548",
+      "uncompressed_bytes": 11715836
+    },
+    "status_evidence_streams": {
+      "bytes": 1022303,
+      "rows": 128,
+      "sha256": "007f79608313122c6c7e203eadf994b721cd29f0f30769abfa61c2f57d6afbde",
+      "uncompressed_bytes": 1601582
+    }
+  },
+  "raw_counter_status_rows": 100,
+  "raw_source": {
+    "bytes": 98760362,
+    "committed": false,
+    "note": "The private controller file is not committed. Public rows retain every stream hash and byte count; full payloads are retained for all decisive rows, every raw counter-status row, and the frozen 28-problem focus subset.",
+    "sha256": "088118b41ab8810d33d8dd7548818173829b2990e5e730e3b90d24c0f81454e4"
+  },
+  "resource_statistics": {
+    "all_problems": {
+      "cleanup_seconds": {
+        "count": 4271,
+        "max": 0.020733,
+        "mean": 0.001263,
+        "p50": 0.001414,
+        "p90": 0.001902,
+        "p95": 0.00209,
+        "p99": 0.002739
+      },
+      "overall_wall_seconds": {
+        "count": 4271,
+        "max": 120.565553,
+        "mean": 117.20668,
+        "p50": 120.008264,
+        "p90": 120.051162,
+        "p95": 120.059809,
+        "p99": 120.0733
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 4271,
+        "max": 2084843520.0,
+        "mean": 1898623963.796769,
+        "p50": 2077601792.0,
+        "p90": 2082357248.0,
+        "p95": 2082844672.0,
+        "p99": 2083879321.6
+      },
+      "solver_wall_seconds": {
+        "count": 4271,
+        "max": 120.547304,
+        "mean": 117.189362,
+        "p50": 119.990339,
+        "p90": 120.033261,
+        "p95": 120.041611,
+        "p99": 120.050335
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 4271,
+        "max": 0.051808,
+        "mean": 0.016055,
+        "p50": 0.017957,
+        "p90": 0.021998,
+        "p95": 0.022859,
+        "p99": 0.025367
+      }
+    },
+    "decisive_problems": {
+      "cleanup_seconds": {
+        "count": 28,
+        "max": 0.000354,
+        "mean": 0.000285,
+        "p50": 0.000287,
+        "p90": 0.000338,
+        "p95": 0.00034,
+        "p99": 0.00035
+      },
+      "overall_wall_seconds": {
+        "count": 28,
+        "max": 114.206147,
+        "mean": 63.602977,
+        "p50": 92.537398,
+        "p90": 114.054428,
+        "p95": 114.176419,
+        "p99": 114.202203
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 28,
+        "max": 1862782976.0,
+        "mean": 643010413.714286,
+        "p50": 546019328.0,
+        "p90": 1505409843.2,
+        "p95": 1628133580.8,
+        "p99": 1799770972.16
+      },
+      "solver_wall_seconds": {
+        "count": 28,
+        "max": 114.197923,
+        "mean": 63.596682,
+        "p50": 92.529221,
+        "p90": 114.046227,
+        "p95": 114.1683,
+        "p99": 114.19405
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 28,
+        "max": 0.01162,
+        "mean": 0.00601,
+        "p50": 0.007678,
+        "p90": 0.008267,
+        "p95": 0.0084,
+        "p99": 0.010758
+      }
+    },
+    "memory_definition": {
+      "internal_limit_mib": 2000,
+      "limitation": "A transient peak between samples can be missed; cgroup OOM counters and a near-limit SIGKILL fallback classify such kills.",
+      "metric": "sampled aggregate process-group RSS",
+      "sample_interval_seconds": 0.05,
+      "sandbox_limit_mib": 2048,
+      "scope": "complete solver process group"
+    },
+    "nondecisive_problems": {
+      "cleanup_seconds": {
+        "count": 4243,
+        "max": 0.020733,
+        "mean": 0.00127,
+        "p50": 0.001417,
+        "p90": 0.001903,
+        "p95": 0.002092,
+        "p99": 0.002742
+      },
+      "overall_wall_seconds": {
+        "count": 4243,
+        "max": 120.565553,
+        "mean": 117.560417,
+        "p50": 120.008536,
+        "p90": 120.051256,
+        "p95": 120.059911,
+        "p99": 120.073307
+      },
+      "peak_process_group_rss_bytes": {
+        "count": 4243,
+        "max": 2084843520.0,
+        "mean": 1906909888.708932,
+        "p50": 2077646848.0,
+        "p90": 2082361344.0,
+        "p95": 2082856550.4,
+        "p99": 2083881615.36
+      },
+      "solver_wall_seconds": {
+        "count": 4243,
+        "max": 120.547304,
+        "mean": 117.543025,
+        "p50": 119.990636,
+        "p90": 120.033314,
+        "p95": 120.041683,
+        "p99": 120.050354
+      },
+      "wrapper_non_solver_seconds": {
+        "count": 4243,
+        "max": 0.051808,
+        "mean": 0.016122,
+        "p50": 0.017997,
+        "p90": 0.022006,
+        "p95": 0.022864,
+        "p99": 0.025385
+      }
+    }
+  },
+  "schema": "same-resource-atp-tool-summary-v1",
+  "status_counts": {
+    "completed_no_decisive_result": 98,
+    "memory_limit": 3210,
+    "resource_exhausted": 935,
+    "theorem": 28
+  },
+  "status_counts_by_dataset": {
+    "alps4141": {
+      "completed_no_decisive_result": 84,
+      "memory_limit": 3149,
+      "resource_exhausted": 880,
+      "theorem": 28
+    },
+    "austin96": {
+      "completed_no_decisive_result": 2,
+      "memory_limit": 57,
+      "resource_exhausted": 37
+    },
+    "generality34": {
+      "completed_no_decisive_result": 12,
+      "memory_limit": 4,
+      "resource_exhausted": 18
+    }
+  },
+  "tool": "vampire",
+  "trusted_counter_satisfiable_rows": 0
+}

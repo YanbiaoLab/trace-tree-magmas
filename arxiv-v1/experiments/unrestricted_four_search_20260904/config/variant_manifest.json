@@ -1,0 +1,53 @@
+{
+  "profiles": {
+    "cnf_nf16_reverse_ties_completed_first_sound_v3": {
+      "certificate_limit_bytes": 1024000,
+      "family": "cnf",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/cnf/cnf_nf16_reverse_ties_completed_first_sound_v3/solver.py",
+      "role": "supplemental_historical_hit_regression_nf16",
+      "sha256": "fec9d6b601adc060e59c60453feabc2dd8f86275f41c873e37cf198d6a6bb94a"
+    },
+    "completion_generalized_index0_full_v1": {
+      "certificate_limit_bytes": 1024000,
+      "family": "completion",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/completion/completion_generalized_index0_full_v1/solver.py",
+      "role": "supplement_adds_one_problem",
+      "sha256": "5cc0a0106bb522f4ba50b50d42b9283e37d81e99bde6d9d821f6c14a47ccf0f4"
+    },
+    "completion_hybrid_soundfix_v5": {
+      "certificate_limit_bytes": 1024000,
+      "family": "completion",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/completion/completion_hybrid_soundfix_v5/solver.py",
+      "role": "best_main_profile_historical_hit_regression",
+      "sha256": "ce0682964b8a658a9e5c53e2ed3de7e95f9603fda1d79577dbbef3cc30e853e1"
+    },
+    "completion_indexed_all_v1": {
+      "certificate_limit_bytes": 1024000,
+      "family": "completion",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/completion/completion_indexed_all_v1/solver.py",
+      "role": "supplement_replaces_three_client_cutoff_certificates",
+      "sha256": "e0f101259a26ab31b831c3a695855130d03bba39c530a065a39635dbf429c645"
+    },
+    "guarded_contract_first_v1": {
+      "certificate_limit_bytes": 1024000,
+      "family": "guarded",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/guarded/guarded_contract_first_v1/solver.py",
+      "role": "supplemental_historical_hit_regression",
+      "sha256": "02ca71a999d99d9410d28ff37263ac57a86ed6c8c3cc36ba358cdb357fa3a3e1"
+    },
+    "trace_depth_sweep_soundfix_v5": {
+      "certificate_limit_bytes": 1024000,
+      "family": "trace",
+      "internal_budget_seconds": 120,
+      "path": "algorithms/trace/trace_depth_sweep_soundfix_v5/solver.py",
+      "role": "primary_full_benchmark",
+      "sha256": "f3a9f430b912f3389fbedfa4c1639d225be33d2e3a1a0533ba367fb12d5e199d"
+    }
+  },
+  "schema": "unrestricted-search-variant-manifest-v1"
+}

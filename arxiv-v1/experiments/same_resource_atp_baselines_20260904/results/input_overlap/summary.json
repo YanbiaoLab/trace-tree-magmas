@@ -1,0 +1,43 @@
+{
+  "alpha_renaming_and_equation_symmetry": {
+    "cross_source_group_counts": {
+      "alps4141 & austin96": 83
+    },
+    "cross_source_groups": 83,
+    "duplicate_groups": 84,
+    "groups_not_already_exact_duplicates": 1,
+    "records_in_duplicate_groups": 168,
+    "redundant_records": 84,
+    "unique_problems": 4187
+  },
+  "exact_directed_implication": {
+    "cross_source_group_counts": {
+      "alps4141 & austin96": 83
+    },
+    "cross_source_groups": 83,
+    "duplicate_groups": 83,
+    "records_in_duplicate_groups": 166,
+    "redundant_records": 83,
+    "unique_problems": 4188
+  },
+  "input": {
+    "records": 4271,
+    "source_counts": {
+      "alps4141": 4141,
+      "austin96": 96,
+      "generality34": 34
+    },
+    "unique_record_ids": 4271
+  },
+  "interpretation": {
+    "frozen_input_changed": false,
+    "overall_unique_denominator_alpha": 4187,
+    "overall_unique_denominator_exact": 4188,
+    "source_specific_denominators": {
+      "alps4141": 4141,
+      "austin96": 96,
+      "generality34": 34
+    }
+  },
+  "schema": "same-resource-atp-input-overlap-audit-v1"
+}

@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the manuscript below."
+title: "Trace-Tree Magmas: Proof-Producing Infinite Countermodels and 28 New Order-Five Austin Classifications"
+type: article
+version: 0.2.0
+date-released: 2026-09-05
+authors:
+  - family-names: Zhao
+    given-names: Jiaming
+    email: zplusm@foxmail.com
+    affiliation: "Yanbiao Lab, DataCanvas Co., Ltd.; School of Mathematical Sciences, Peking University"
+  - family-names: Wu
+    given-names: Bing
+    affiliation: "Yanbiao Lab, DataCanvas Co., Ltd."
+  - family-names: Miao
+    given-names: Xu
+    email: miaoxu@zetyun.com
+    affiliation: "Yanbiao Lab, DataCanvas Co., Ltd."
+repository-code: "https://github.com/YanbiaoLab/trace-tree-magmas"

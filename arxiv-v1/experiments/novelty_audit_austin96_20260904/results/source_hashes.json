@@ -1,0 +1,35 @@
+{
+  "schema": "novelty-audit-source-hashes-v1",
+  "files": [
+    {
+      "role": "austin96",
+      "name": "austin96.jsonl",
+      "sha256": "94f581fe04a13edafe183febdc15bb04348ce97e6cab448980db0217e3788360"
+    },
+    {
+      "role": "our_results",
+      "name": "per_profile_results.jsonl",
+      "sha256": "9b42b6ebf31fea3a3f27997e0eb912b90c3ab2d723dceb630a96f47ce9876f28"
+    },
+    {
+      "role": "alps_screening",
+      "name": "austin_laws.jsonl",
+      "sha256": "9d9c66ff35f86bffee009fd8a568b2ddf075993f913cfac63f61dec4a2d949e9"
+    },
+    {
+      "role": "alps_final_status",
+      "name": "final_status.jsonl",
+      "sha256": "4638322160df47931273cf3964d71f2fa61a00d8ee325b0e9d56371375ebcdf7"
+    },
+    {
+      "role": "alps_evaluation_pool",
+      "name": "evaluation_pool.jsonl",
+      "sha256": "d224614249528683e42e63557ac3d6326f414602f2814cc5db370be2b3f4b1f9"
+    },
+    {
+      "role": "alps_residual_portfolio",
+      "name": "baseline_full_final.jsonl",
+      "sha256": "34b8c2612631bf61664147688dbac0d58742c0eec527d673d5a6c2e334dbcde0"
+    }
+  ]
+}

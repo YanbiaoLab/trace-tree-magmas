@@ -1,0 +1,78 @@
+{
+  "alps4141": {
+    "alpha_symmetry_equivalence_classes": 4140,
+    "collapsed_redundant_records": 1,
+    "families": {
+      "cnf": {
+        "accepted_equivalence_classes": 5,
+        "accepted_representatives_with_source_native_id": 3,
+        "covered_original_records_via_equivalence": 5
+      },
+      "completion": {
+        "accepted_equivalence_classes": 51,
+        "accepted_representatives_with_source_native_id": 51,
+        "covered_original_records_via_equivalence": 51
+      },
+      "guarded": {
+        "accepted_equivalence_classes": 2,
+        "accepted_representatives_with_source_native_id": 0,
+        "covered_original_records_via_equivalence": 2
+      },
+      "trace": {
+        "accepted_equivalence_classes": 624,
+        "accepted_representatives_with_source_native_id": 600,
+        "covered_original_records_via_equivalence": 625
+      }
+    },
+    "four_family_union": {
+      "accepted_equivalence_classes": 652,
+      "accepted_representatives_with_source_native_id": 624,
+      "covered_original_records_via_equivalence": 653
+    },
+    "name": "alps4141",
+    "original_records": 4141
+  },
+  "combined_execution_representatives": 4187,
+  "counting_rule": {
+    "accepted_equivalence_classes": "a representative has a selected Judge-accepted certificate",
+    "covered_original_records_via_equivalence": "all original source records in an accepted representative's frozen equivalence class",
+    "primary_reporting": "report order5 and ALPS4141 separately",
+    "receipt_boundary": "mapped duplicate records are coverage entries, not additional Judge receipts",
+    "search_execution": "4187 alpha-renaming/equality-symmetry representatives"
+  },
+  "cross_source_equivalence_classes": 83,
+  "order5": {
+    "alpha_symmetry_equivalence_classes": 130,
+    "collapsed_redundant_records": 0,
+    "families": {
+      "cnf": {
+        "accepted_equivalence_classes": 14,
+        "accepted_representatives_with_source_native_id": 14,
+        "covered_original_records_via_equivalence": 14
+      },
+      "completion": {
+        "accepted_equivalence_classes": 10,
+        "accepted_representatives_with_source_native_id": 10,
+        "covered_original_records_via_equivalence": 10
+      },
+      "guarded": {
+        "accepted_equivalence_classes": 2,
+        "accepted_representatives_with_source_native_id": 2,
+        "covered_original_records_via_equivalence": 2
+      },
+      "trace": {
+        "accepted_equivalence_classes": 36,
+        "accepted_representatives_with_source_native_id": 36,
+        "covered_original_records_via_equivalence": 36
+      }
+    },
+    "four_family_union": {
+      "accepted_equivalence_classes": 44,
+      "accepted_representatives_with_source_native_id": 44,
+      "covered_original_records_via_equivalence": 44
+    },
+    "name": "order5",
+    "original_records": 130
+  },
+  "schema": "unrestricted-four-search-test-set-breakdown-v1"
+}

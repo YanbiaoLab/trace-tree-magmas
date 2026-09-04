@@ -1,0 +1,12 @@
+{
+  "allowed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "accepted_verdict": "false",
+  "certificate_limit_bytes": 1024000,
+  "proof_policy_revision": "judge-v3-repl-proof-policy-v3:official=stage2-official-proof-policy-v1:94ce33cf6c7c:default_timeout=86400:timeout_cap=86400:max_code=10485760:max_false=10485760:timeout_contract=participant-lean-module-shared-v2:repl_protocol=stage2-staged-v2:repl_process_policy=one-problem-per-process:module_boundary=JudgeProblem+Submission+clean-root-check-v2",
+  "schema": "unrestricted-four-search-judge-contract-v1",
+  "service_revision": "judge-v3-repl-380d1b2c0dd5-lean-4a7ab54d-mathlib-0df444a360ea"
+}

@@ -1,0 +1,16 @@
+{
+  "execution": {
+    "all_tools_fresh_full_run": true,
+    "memory_protocol": "uniform-process-tree-rss-v2",
+    "twee_each_reached_configuration_has_full_15_second_allowance": true
+  },
+  "input_equivalence": {
+    "alpha_redundant_records": 84,
+    "alpha_renaming_and_equation_symmetry": 4187,
+    "exact_directed_implications": 4188,
+    "exact_redundant_records": 83,
+    "record_ids": 4271
+  },
+  "schema": "same-resource-atp-overlap-audit-v1",
+  "scientific_conflicts": []
+}

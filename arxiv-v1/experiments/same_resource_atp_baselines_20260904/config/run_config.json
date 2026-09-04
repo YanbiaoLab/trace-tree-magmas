@@ -1,0 +1,65 @@
+{
+  "schema": "same-resource-atp-baselines-config-v3",
+  "status": "preregistered_before_formal_outcomes",
+  "experiment_date_utc": "2026-09-04",
+  "input": {
+    "file": "inputs/combined_4271.jsonl",
+    "records": 4271,
+    "sha256": "c6182a0b80363ad4bb1ab80d0c76bfbbe27f98fc0b26662f9b210a5648c303c9"
+  },
+  "resource_policy": {
+    "sandbox_concurrency_requested": 150,
+    "effective_concurrency_is_reported_per_tool": true,
+    "sandbox_creation_concurrency": 25,
+    "sandbox_vcpu": 2,
+    "sandbox_memory_mib": 2048,
+    "process_tree_rss_limit_mib": 2000,
+    "rss_sample_interval_seconds": 0.05,
+    "per_problem_solver_allowance_seconds": 120,
+    "solver_cleanup_and_rpc_time_reported_separately": true,
+    "controller_rpc_wait_seconds": 180,
+    "per_stream_output_mib": 16,
+    "infrastructure_retries": 3
+  },
+  "tools": {
+    "vampire": {
+      "name": "Vampire",
+      "version": "5.0.1",
+      "binary_sha256": "81532e088c4ee1238d7ea1d8e868a2dccf8d358ad4d2126d257b4dda7f2e6bd9",
+      "commands": [["vampire", "--input_syntax", "tptp", "--mode", "portfolio", "--schedule", "casc", "-i", "500", "-t", "120", "-p", "tptp", "problem.p"]],
+      "semantic_direction": "triv",
+      "counter_satisfiable_policy": "raw_status_only_scientific_verdict_empty"
+    },
+    "eprover": {
+      "name": "E",
+      "version": "3.5.1",
+      "binary_sha256": "d30317bad0c72ea702306f16661e0d155b81e637e2a2d33b4a1b71545f4bfd5f",
+      "commands": [["eprover", "--auto", "--proof-object", "--tstp-format", "--cpu-limit=120", "problem.p"]],
+      "semantic_direction": "triv",
+      "counter_satisfiable_policy": "raw_status_only_scientific_verdict_empty"
+    },
+    "twee_complete": {
+      "name": "Twee",
+      "version": "2.6.1",
+      "binary_sha256": "a97d5ed05f2fe13549f9551fe190ceb4794581ea1d6dfa06f5f1042efe098126",
+      "commands": [["twee", "--tstp", "--formal-proof", "problem.p"]],
+      "search_flags_relative_to_alps": [],
+      "additional_output_only_flags": ["--formal-proof"],
+      "semantic_direction": "both",
+      "counter_satisfiable_policy": "trusted_after_clean_parameter_free_completion"
+    }
+  },
+  "capability_fields": [
+    "source_implication_proved",
+    "explicit_model_emitted",
+    "explicit_infinite_carrier_emitted",
+    "complete_tstp_proof_emitted",
+    "independent_certificate_accepted",
+    "judge_v3_applicable"
+  ],
+  "judge_boundary": {
+    "api": "judge-v3",
+    "lean_canary_required": true,
+    "raw_tstp_is_not_a_judge_v3_submission": true
+  }
+}

@@ -1,0 +1,7 @@
+equation_id,equation,alps_stage,alps_config,alps_budget_s,alps_verdict,also_accepted_by_our_selected_searches
+E12857,x = y * ((x * (y * (z * z))) * y),screening,screening certificate,,AUSTIN,no
+E19966,x = (y * y) * ((x * (x * z)) * z),residual portfolio,twee/complete,30,AUSTIN,yes
+E22619,x = (y * (y * x)) * ((z * z) * z),residual portfolio,twee/complete,30,AUSTIN,yes
+E22634,x = (y * (y * y)) * ((x * z) * z),residual portfolio,twee/complete,30,AUSTIN,yes
+E26105,x = (y * ((y * x) * x)) * (z * z),residual portfolio,twee/complete,30,AUSTIN,yes
+E33436,x = (y * (((z * z) * y) * x)) * y,screening,screening certificate,,AUSTIN,no

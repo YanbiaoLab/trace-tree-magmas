@@ -1,0 +1,34 @@
+{
+  "schema": "same-resource-atp-tool-sources-v1",
+  "binaries_committed": false,
+  "tools": {
+    "vampire": {
+      "version": "5.0.1",
+      "official_repository": "https://github.com/vprover/vampire",
+      "release_page": "https://github.com/vprover/vampire/releases/tag/v5.0.1",
+      "linux_archive_url": "https://github.com/vprover/vampire/releases/download/v5.0.1/vampire-Linux-X64.zip",
+      "linux_archive_sha256": "6ff2f42ea7fb9753ee104efc3e623d5e39443190f7c82a63e1e1517bf9d2cde3",
+      "binary_sha256": "81532e088c4ee1238d7ea1d8e868a2dccf8d358ad4d2126d257b4dda7f2e6bd9",
+      "tag_commit": "1b13eafde72de3f23d9446598f5d3fadf4ee7ab0"
+    },
+    "eprover": {
+      "version": "3.5.1",
+      "official_repository": "https://github.com/eprover/eprover",
+      "release_tag": "E-3.5.1",
+      "source_archive_sha256": "3c3be67fa2e04c37d09fd9f28bf27ad5c60903c7d30114ae4fe0d6397dad2882",
+      "binary_sha256": "d30317bad0c72ea702306f16661e0d155b81e637e2a2d33b4a1b71545f4bfd5f",
+      "commit": "01f5bd9b7fc7c81a9f3737712d1cce9d92191860",
+      "license": "GPL-2.0-or-later"
+    },
+    "twee": {
+      "version": "2.6.1",
+      "source_url": "https://hackage.haskell.org/package/twee-2.6.1/twee-2.6.1.tar.gz",
+      "source_archive_sha256": "7e4ff6626e03c33e0e75e71c8da109030c4881785a3de073aaea25885a6ea9bd",
+      "binary_archive_sha256": "fe5159baa57bf31e68a2948bf87f5f8e0cd0c824ab6ef08fb819ff1f6a6cb21c",
+      "binary_sha256": "a97d5ed05f2fe13549f9551fe190ceb4794581ea1d6dfa06f5f1042efe098126",
+      "source_checkout_commit": "d425378803682be4cb9ee24dcdf37e50ab38f2f0",
+      "sequential_main_sha256": "9b617123da095eb72ecc1510527872391bae24100f040566fbf6accf07601893",
+      "license": "BSD-3-Clause"
+    }
+  }
+}

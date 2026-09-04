@@ -1,0 +1,35 @@
+{
+  "schema": "paper-input-manifest-v1",
+  "datasets": {
+    "austin96": {
+      "records": 96,
+      "sha256": "94f581fe04a13edafe183febdc15bb04348ce97e6cab448980db0217e3788360",
+      "file": "austin96.jsonl"
+    },
+    "generality34": {
+      "records": 34,
+      "sha256": "4cacc12fec09227b7cf3de3e0d3ce5a3af16969b972bce4050614cda1d26b1f1",
+      "file": "generality34.jsonl"
+    },
+    "alps4141": {
+      "records": 4141,
+      "sha256": "0eccd38302ad14e695c8782fc1b8c719efa7c63a63c512982f69951cf9a72abb",
+      "file": "alps4141.jsonl"
+    }
+  },
+  "combined": {
+    "records": 4271,
+    "sha256": "c6182a0b80363ad4bb1ab80d0c76bfbbe27f98fc0b26662f9b210a5648c303c9",
+    "file": "combined_4271.jsonl",
+    "order": [
+      "austin96",
+      "generality34",
+      "alps4141"
+    ]
+  },
+  "evidence_subset": {
+    "file": "focus28_ids.txt",
+    "records": 28,
+    "sha256": "8db41de72dddf5d364a025200d7c2ebd52b661ea3581df1c3c3c4f68069cd133"
+  }
+}

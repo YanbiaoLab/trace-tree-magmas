@@ -1,0 +1,48 @@
+* text=auto
+
+*.c text eol=lf
+*.bib text eol=lf
+*.bst text eol=lf
+*.cff text eol=lf
+*.cls text eol=lf
+*.csv text eol=lf
+*.example text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.lean text eol=lf
+*.lock text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.tex text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+.gitattributes text eol=lf
+.gitignore text eol=lf
+LICENSE text eol=lf
+NOTICE text eol=lf
+SHA256SUMS text eol=lf
+
+*.gz binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+
+# Frozen evidence whose upstream/controller byte hashes include CRLF. Preserve
+# exact bytes across platforms instead of applying text normalization.
+experiments/novelty_audit_austin96_20260904/results/summary.json -text !eol
+experiments/novelty_audit_austin96_20260904/results/source_hashes.json -text !eol
+experiments/novelty_audit_austin96_20260904/inputs/alps/corpus/austin_laws.jsonl -text !eol
+experiments/novelty_audit_austin96_20260904/inputs/alps/corpus/evaluation_pool.jsonl -text !eol
+experiments/novelty_audit_austin96_20260904/inputs/alps/corpus/final_status.jsonl -text !eol
+experiments/novelty_audit_austin96_20260904/inputs/alps/baseline/baseline_full_final.jsonl -text !eol
+experiments/novelty_audit_austin96_20260904/inputs/alps/LICENSE -text !eol
+experiments/unrestricted_four_search_20260904/inputs/final_supplemental_cnf_nf16_17.jsonl -text !eol
+experiments/unrestricted_four_search_20260904/inputs/final_supplemental_completion_indexed3.jsonl -text !eol
+experiments/unrestricted_four_search_20260904/inputs/final_supplemental_guarded_2.jsonl -text !eol
+experiments/unrestricted_four_search_20260904/inputs/final_supplemental_completion_61.jsonl -text !eol
+experiments/unrestricted_four_search_20260904/results/per_profile_metrics.csv -text !eol

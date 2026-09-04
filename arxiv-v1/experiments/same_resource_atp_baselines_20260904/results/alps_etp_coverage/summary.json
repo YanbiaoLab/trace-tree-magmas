@@ -1,0 +1,64 @@
+{
+  "alps_layers": {
+    "evaluation_pool": {
+      "meaning": "the 4,141-record ATP/search evaluation pool used in the present experiment",
+      "records": 4141
+    },
+    "final_status": {
+      "meaning": "screened corpus membership; this is the layer behind the 115/130 table",
+      "records": 10474
+    }
+  },
+  "categories": {
+    "table20_1_known_austin10": {
+      "absent_from_alps_evaluation_pool": 10,
+      "absent_from_alps_final_status": 1,
+      "etp_total": 10,
+      "final_status_values": {
+        "AUSTIN_PROVEN": 9
+      },
+      "in_alps_evaluation_pool": 0,
+      "in_alps_final_status": 9
+    },
+    "table20_2_austin96": {
+      "absent_from_alps_evaluation_pool": 13,
+      "absent_from_alps_final_status": 9,
+      "etp_total": 96,
+      "final_status_values": {
+        "AUSTIN_PROVEN": 2,
+        "NO_FINITE_MODEL": 83,
+        "OPEN": 2
+      },
+      "in_alps_evaluation_pool": 83,
+      "in_alps_final_status": 87
+    },
+    "table20_3_unknown_finite_status24": {
+      "absent_from_alps_evaluation_pool": 24,
+      "absent_from_alps_final_status": 5,
+      "etp_total": 24,
+      "final_status_values": {
+        "OPEN": 18,
+        "SATISFIABLE_ONLY": 1
+      },
+      "in_alps_evaluation_pool": 0,
+      "in_alps_final_status": 19
+    }
+  },
+  "conclusion": "ALPS inclusion in the ETP table and duplication inside the 4,271-run matrix use different ALPS layers and must not be conflated.",
+  "matching": "equation trees modulo bijective variable renaming and equality symmetry",
+  "schema": "alps-etp-coverage-v1",
+  "sources": {
+    "alps_commit": "e831af76da026edfa1697c970aeebb8098507b6d",
+    "alps_evaluation_pool_sha256": "d224614249528683e42e63557ac3d6326f414602f2814cc5db370be2b3f4b1f9",
+    "alps_final_status_sha256": "4638322160df47931273cf3964d71f2fa61a00d8ee325b0e9d56371375ebcdf7",
+    "austin96_sha256": "94f581fe04a13edafe183febdc15bb04348ce97e6cab448980db0217e3788360",
+    "generality34_sha256": "4cacc12fec09227b7cf3de3e0d3ce5a3af16969b972bce4050614cda1d26b1f1"
+  },
+  "totals": {
+    "absent_from_alps_evaluation_pool": 47,
+    "absent_from_alps_final_status": 15,
+    "etp_total": 130,
+    "in_alps_evaluation_pool": 83,
+    "in_alps_final_status": 115
+  }
+}

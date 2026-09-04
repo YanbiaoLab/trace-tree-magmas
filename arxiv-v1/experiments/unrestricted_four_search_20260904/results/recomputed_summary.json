@@ -1,0 +1,166 @@
+{
+  "four_family_union": 668,
+  "four_family_union_plus_trace_fluctuation": 678,
+  "profiles": {
+    "cnf_nf16_reverse_ties_completed_first_sound_v3": {
+      "accepted_unique_problems": 17,
+      "generated_unique_problems": 17,
+      "generation": {
+        "generated": 17
+      },
+      "judge": {
+        "accepted": 17
+      },
+      "records": 17
+    },
+    "completion_generalized_index0_full_v1": {
+      "accepted_unique_problems": 1,
+      "generated_unique_problems": 1,
+      "generation": {
+        "generated": 1
+      },
+      "judge": {
+        "accepted": 1
+      },
+      "records": 1
+    },
+    "completion_hybrid_soundfix_v5": {
+      "accepted_unique_problems": 57,
+      "generated_unique_problems": 60,
+      "generation": {
+        "generated": 60,
+        "no_candidate": 1
+      },
+      "judge": {
+        "accepted": 57,
+        "lean_timeout_60m_client_cutoff": 3,
+        "not_submitted_no_certificate": 1
+      },
+      "records": 61
+    },
+    "completion_indexed_all_v1": {
+      "accepted_unique_problems": 3,
+      "generated_unique_problems": 3,
+      "generation": {
+        "generated": 3
+      },
+      "judge": {
+        "accepted": 3
+      },
+      "records": 3
+    },
+    "guarded_contract_first_v1": {
+      "accepted_unique_problems": 2,
+      "generated_unique_problems": 2,
+      "generation": {
+        "generated": 2
+      },
+      "judge": {
+        "accepted": 2
+      },
+      "records": 2
+    },
+    "trace_depth_sweep_soundfix_v5": {
+      "accepted_unique_problems": 636,
+      "generated_unique_problems": 636,
+      "generation": {
+        "generated": 636,
+        "memory_limit": 256,
+        "no_candidate": 3295
+      },
+      "judge": {
+        "accepted": 636,
+        "not_submitted_no_certificate": 3551
+      },
+      "records": 4187
+    }
+  },
+  "public_profile_rows": 4271,
+  "schema": "unrestricted-four-search-recomputed-summary-v1",
+  "selected_family_counts": {
+    "cnf": 17,
+    "completion": 61,
+    "guarded": 2,
+    "trace": 636
+  },
+  "test_sets": {
+    "alps4141": {
+      "alpha_symmetry_equivalence_classes": 4140,
+      "collapsed_redundant_records": 1,
+      "families": {
+        "cnf": {
+          "accepted_equivalence_classes": 5,
+          "accepted_representatives_with_source_native_id": 3,
+          "covered_original_records_via_equivalence": 5
+        },
+        "completion": {
+          "accepted_equivalence_classes": 51,
+          "accepted_representatives_with_source_native_id": 51,
+          "covered_original_records_via_equivalence": 51
+        },
+        "guarded": {
+          "accepted_equivalence_classes": 2,
+          "accepted_representatives_with_source_native_id": 0,
+          "covered_original_records_via_equivalence": 2
+        },
+        "trace": {
+          "accepted_equivalence_classes": 624,
+          "accepted_representatives_with_source_native_id": 600,
+          "covered_original_records_via_equivalence": 625
+        }
+      },
+      "four_family_union": {
+        "accepted_equivalence_classes": 652,
+        "accepted_representatives_with_source_native_id": 624,
+        "covered_original_records_via_equivalence": 653
+      },
+      "name": "alps4141",
+      "original_records": 4141
+    },
+    "combined_execution_representatives": 4187,
+    "counting_rule": {
+      "accepted_equivalence_classes": "a representative has a selected Judge-accepted certificate",
+      "covered_original_records_via_equivalence": "all original source records in an accepted representative's frozen equivalence class",
+      "primary_reporting": "report order5 and ALPS4141 separately",
+      "receipt_boundary": "mapped duplicate records are coverage entries, not additional Judge receipts",
+      "search_execution": "4187 alpha-renaming/equality-symmetry representatives"
+    },
+    "cross_source_equivalence_classes": 83,
+    "order5": {
+      "alpha_symmetry_equivalence_classes": 130,
+      "collapsed_redundant_records": 0,
+      "families": {
+        "cnf": {
+          "accepted_equivalence_classes": 14,
+          "accepted_representatives_with_source_native_id": 14,
+          "covered_original_records_via_equivalence": 14
+        },
+        "completion": {
+          "accepted_equivalence_classes": 10,
+          "accepted_representatives_with_source_native_id": 10,
+          "covered_original_records_via_equivalence": 10
+        },
+        "guarded": {
+          "accepted_equivalence_classes": 2,
+          "accepted_representatives_with_source_native_id": 2,
+          "covered_original_records_via_equivalence": 2
+        },
+        "trace": {
+          "accepted_equivalence_classes": 36,
+          "accepted_representatives_with_source_native_id": 36,
+          "covered_original_records_via_equivalence": 36
+        }
+      },
+      "four_family_union": {
+        "accepted_equivalence_classes": 44,
+        "accepted_representatives_with_source_native_id": 44,
+        "covered_original_records_via_equivalence": 44
+      },
+      "name": "order5",
+      "original_records": 130
+    },
+    "schema": "unrestricted-four-search-test-set-breakdown-v1"
+  },
+  "trace_fluctuation_certificates": 12,
+  "trace_fluctuation_incremental_over_primary_union": 10
+}

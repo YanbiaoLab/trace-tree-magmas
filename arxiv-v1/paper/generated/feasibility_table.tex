@@ -1,0 +1,28 @@
+\begin{table}[t]
+\caption{Search time and sampled peak process-tree RSS.  Entries are
+mean / median / maximum; Judge time is excluded.  Trace rows come from the
+fresh full run.  Auxiliary rows are measured only on the targeted regressions
+of Table~\ref{tab:isolated-results}.}
+\label{tab:feasibility}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Profile / scope & Count & \multicolumn{3}{c}{Search time (s)} &
+\multicolumn{3}{c}{Peak RSS (MiB)} \\
+\cmidrule(lr){3-5}\cmidrule(l){6-8}
+& & Mean & Median & Max. & Mean & Median & Max. \\
+\midrule
+Trace / Candidate-96 accepted & 28 & 1.29 & 0.58 & 10.77 & 112.8 & 66.1 & 823.3 \\
+Trace / KnownAustin-10 accepted & 6 & 0.54 & 0.57 & 0.64 & 64.9 & 66.0 & 68.9 \\
+Trace / Open-24 accepted & 2 & 0.55 & 0.55 & 0.56 & 64.2 & 64.2 & 66.2 \\
+Trace / ALPS-only accepted & 600 & 4.08 & 0.79 & 118.56 & 163.6 & 66.1 & 1908.3 \\
+Trace / Canonical-4187 accepted & 636 & 3.91 & 0.77 & 118.56 & 160.2 & 66.1 & 1908.3 \\
+Guarded / targeted accepted & 2 & 0.58 & 0.58 & 0.59 & 41.3 & 41.3 & 41.3 \\
+Completion (main) / targeted accepted & 57 & 13.95 & 13.64 & 43.00 & 122.9 & 75.3 & 1934.8 \\
+CNF / targeted accepted & 17 & 1.15 & 1.22 & 1.73 & 22.7 & 23.9 & 24.5 \\
+\bottomrule
+\end{tabular}
+\end{table}

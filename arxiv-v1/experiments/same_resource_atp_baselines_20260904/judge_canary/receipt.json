@@ -1,0 +1,55 @@
+{
+  "certificate_sha256": "089ac47da7008bdff3ea8391256c4c2b1b79ae1d948d12c87817034ec795c8b2",
+  "health": {
+    "status": "ok"
+  },
+  "judge_v3_applicable": true,
+  "private_endpoint_in_artifact": false,
+  "problem_sha256": "05a10021b822af63df0f86a975e6e4113984bcd71fcf74ae08562f07b85b02b8",
+  "purpose": "bind current Judge-v3 environment; does not validate ATP TSTP outputs",
+  "receipt": {
+    "axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "direct_declarations": [
+      "And",
+      "And.intro",
+      "Bool",
+      "Bool.false",
+      "Bool.noConfusion",
+      "Bool.true",
+      "Eq",
+      "Eq.symm",
+      "Eq.trans",
+      "EquationLHS",
+      "EquationRHS",
+      "Exists",
+      "Exists.intro",
+      "False",
+      "Goal",
+      "Magma",
+      "Not",
+      "Unit",
+      "congrArg",
+      "rfl",
+      "submission",
+      "submission.CM",
+      "submission.CM.L.match_1",
+      "submission.CM.e",
+      "submission.CM.instMagma2",
+      "submission.CM.k",
+      "submission.CM.source_holds"
+    ],
+    "elapsed_ms": 7449,
+    "error_code": "ACCEPTED",
+    "execution_fingerprint": "judge-v3-repl-execution-v3:7c969e760b82a0de3092ee4c4b7c54d0a86f921196f95020679c97b1ea3655ef",
+    "proof_policy_rev": "judge-v3-repl-proof-policy-v3:official=stage2-official-proof-policy-v1:94ce33cf6c7c:default_timeout=300:timeout_cap=300:max_code=100000:max_false=20000:timeout_contract=participant-lean-module-shared-v2:repl_protocol=stage2-staged-v2:repl_process_policy=one-problem-per-process:module_boundary=JudgeProblem+Submission+clean-root-check-v2",
+    "service_rev": "judge-v3-repl-380d1b2c0dd5-lean-67e1755b-mathlib-905b95818eb3",
+    "status": "accepted",
+    "verdict": "false"
+  },
+  "schema": "same-resource-atp-judge-canary-v1",
+  "submitted_verdict": "false"
+}

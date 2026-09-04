@@ -1,0 +1,31 @@
+{
+  "completion_profiles": {
+    "adds_one": "completion_generalized_index0_full_v1",
+    "best": "completion_hybrid_soundfix_v5",
+    "replaces_three_60m_cutoffs": "completion_indexed_all_v1"
+  },
+  "counting": {
+    "alternate_certificates_are_extra_hits": false,
+    "trace_fluctuation_supplement_in_primary_count": false,
+    "unit": "unique benchmark problem"
+  },
+  "experiment_date": "2026-09-04",
+  "protocol": {
+    "certificate_limit_kib": 1000,
+    "completion_client_wait_cutoff_seconds": 3600,
+    "internal_search_seconds_per_profile": 120,
+    "judge": "Judge v3",
+    "outer_process_seconds": 125,
+    "process_tree_memory_mib": 2000,
+    "remote_sandbox_concurrency": 120,
+    "remote_sandbox_concurrency_cap": 150
+  },
+  "schema": "unrestricted-four-search-final-run-config-v1",
+  "scope": {
+    "cnf": "fresh rerun of 17 sound NF16 historically generated problems",
+    "completion": "fresh rerun of 61 historically generated problems, plus targeted generalized and indexed certificate profiles",
+    "guarded": "fresh rerun of 2 historically generated problems",
+    "trace": "fresh full 4,187-problem benchmark"
+  },
+  "status": "completed"
+}

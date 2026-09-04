@@ -1,0 +1,79 @@
+{
+  "schema": "vendored-sandbox-runner-v1",
+  "files": [
+    {
+      "path": "solver_runtime_sandbox/__init__.py",
+      "source_sha256": "3086404afc8feb49b99a1ef85da98b1545c12226b58dfcd43e31f3c261909814",
+      "public_sha256": "3086404afc8feb49b99a1ef85da98b1545c12226b58dfcd43e31f3c261909814",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/__main__.py",
+      "source_sha256": "6805f2fd7cfebff43bcb8fe166f4d246eae115b2a0b66bfec4375f43600325a8",
+      "public_sha256": "6805f2fd7cfebff43bcb8fe166f4d246eae115b2a0b66bfec4375f43600325a8",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/judge.py",
+      "source_sha256": "3adab40fcbc89ceb185d7a9093499efe4c4a80ff6093769f3d74c51e25b19a44",
+      "public_sha256": "3adab40fcbc89ceb185d7a9093499efe4c4a80ff6093769f3d74c51e25b19a44",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/memory_monitor.py",
+      "source_sha256": "27669043442a3aa0b0bce9b1adf060152b73ac0da717c19d50be2d6da8af8f88",
+      "public_sha256": "27669043442a3aa0b0bce9b1adf060152b73ac0da717c19d50be2d6da8af8f88",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/memory_supervisor.py",
+      "source_sha256": "5fc81a0fa7c49b12abf92776d5393ab13a94cedafaebcf5947e9ca8b6bc78013",
+      "public_sha256": "5fc81a0fa7c49b12abf92776d5393ab13a94cedafaebcf5947e9ca8b6bc78013",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/models.py",
+      "source_sha256": "bae34bf0c6f1ff7bf2cb710555f97e65bc49b8fd812e0b6f65ba392f5f24e0cc",
+      "public_sha256": "bae34bf0c6f1ff7bf2cb710555f97e65bc49b8fd812e0b6f65ba392f5f24e0cc",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/runner.py",
+      "source_sha256": "871d84eb441efcf0f7793f72b78f6fc02641f36e8af1ad655f7b1bec3cd608f2",
+      "public_sha256": "871d84eb441efcf0f7793f72b78f6fc02641f36e8af1ad655f7b1bec3cd608f2",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/runtime.py",
+      "source_sha256": "695735dda6547839fb50ee5c384591aee71470e053c5039e2c7d0e43b694666d",
+      "public_sha256": "695735dda6547839fb50ee5c384591aee71470e053c5039e2c7d0e43b694666d",
+      "sanitized": false
+    },
+    {
+      "path": "solver_runtime_sandbox/settings.py",
+      "source_sha256": "475f9195abad02d3306049b4f6a7c0dbdaf7366dda58bda3ff5372ac9e1d3e2c",
+      "public_sha256": "e205f6ea23746ed9546d4c105b5b6000b767cd32d8163af9e0db92a55eec29f6",
+      "sanitized": true
+    },
+    {
+      "path": "pyproject.toml",
+      "source_sha256": "19ef8f72ea37259c7330f04cfaba822cc9167292049cafbd56395a2b35ad4430",
+      "public_sha256": "19ef8f72ea37259c7330f04cfaba822cc9167292049cafbd56395a2b35ad4430",
+      "sanitized": false
+    },
+    {
+      "path": "uv.lock",
+      "source_sha256": "938e76e3312a33fc77bb32cdf6ea17159c150b7c0cb316b4a590fa4d707b89d5",
+      "public_sha256": "938e76e3312a33fc77bb32cdf6ea17159c150b7c0cb316b4a590fa4d707b89d5",
+      "sanitized": false
+    }
+  ],
+  "excluded": [
+    ".env",
+    "solver_runtime_sandbox/sandbox-ca.crt",
+    "private service URLs",
+    "private credentials",
+    "runtime logs"
+  ],
+  "settings_change": "Removed organization-specific defaults for E2B_DOMAIN and SOLVER_SANDBOX_TEMPLATE; both must be supplied by the reproducer."
+}

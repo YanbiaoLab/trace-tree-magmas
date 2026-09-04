@@ -1,0 +1,12 @@
+Trace-Tree Magmas
+Copyright 2026 Jiaming Zhao, Bing Wu, and Xu Miao
+
+The Apache License 2.0 in the repository-root LICENSE file applies only to
+the author-created software and Lean certificates identified in LICENSE.md.
+The manuscript, authored measurements and documentation, Judge evidence, and
+third-party benchmark material have the separate terms listed in LICENSE.md.
+
+This reproducibility package contains frozen inputs derived from the
+Equational Theories Project and ALPS.  Those upstream materials retain their
+original notices and licenses; their inclusion does not imply endorsement by
+the upstream authors.
