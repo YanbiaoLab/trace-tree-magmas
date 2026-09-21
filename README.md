@@ -8,3 +8,7 @@
 
 Integrity and offline verification instructions are provided inside the
 snapshot.
+
+## Manuscript revisions
+
+- [`arxiv-v2/`](arxiv-v2/): Updated the author contributions statement.

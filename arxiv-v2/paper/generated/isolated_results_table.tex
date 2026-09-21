@@ -1,0 +1,23 @@
+\begin{table}[t]
+\caption{Scope-correct accounting for the four tuned searches.  Trace was run
+on Canonical-4187, the canonical union of Order5-130 and ALPS-4141.  The other rows are regressions on each
+method's historical hit set and therefore do not measure accuracy over all of
+Canonical-4187.  ``Selected coverage'' uses accepted alternate completion
+certificates for the four cases not accepted by the main profile.}
+\label{tab:isolated-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Search and evaluation scope & Tested & \shortstack{Main\\accepted} &
+\shortstack{Selected\\accepted} & \shortstack{Trace\\overlap} \\
+\midrule
+Trace depth sweep (Canonical-4187) & 4,187 & 636 & 636 & -- \\
+Guarded decoder (historical hits) & 2 & 2 & 2 & 0 \\
+Strict completion (historical hits) & 61 & 57 & 61 & 38 \\
+CNF NF16 (sound historical hits) & 17 & 17 & 17 & 8 \\
+\bottomrule
+\end{tabular}
+\end{table}

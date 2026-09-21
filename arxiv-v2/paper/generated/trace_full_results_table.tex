@@ -1,0 +1,25 @@
+\begin{table}[t]
+\caption{Fresh trace result on Canonical-4187.  The first three rows are the
+disjoint constituents of Order5-130; ``ALPS-only'' is the residual canonical
+contribution of ALPS-4141 after cross-group deduplication.  The three terminal
+generation states are exhaustive.  ``No candidate'' and ``memory limit'' make
+no mathematical claim about the input.}
+\label{tab:trace-full-results}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Canonical partition & Inputs & Accepted & No candidate & Memory limit \\
+\midrule
+Candidate-96 & 96 & 28 & 65 & 3 \\
+KnownAustin-10 & 10 & 6 & 4 & 0 \\
+Open-24 & 24 & 2 & 22 & 0 \\
+\cmidrule(lr){1-5}
+Order5-130 subtotal & 130 & 36 & 91 & 3 \\
+ALPS-only canonical & 4,057 & 600 & 3,204 & 253 \\
+\midrule
+Canonical-4187 & 4,187 & 636 & 3,295 & 256 \\
+\bottomrule
+\end{tabular}
+\end{table}
