@@ -1,0 +1,60 @@
+\begin{table}[!t]
+\caption{The fourteen new duality classes as one-clause trace-tree models.
+Here $\langle a,b\rangle$ is the free pair constructor, $\mathsf S$ is the
+admissible-step relation, and $\mathsf C$ is the exceptional-output relation.  The
+listed representative uses $\star=\mathsf{eval}$; the other law in the first
+column is modeled by the opposite magma.}
+\label{tab:trace-schemas}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}c>{\raggedright\arraybackslash}p{7.25cm}@{}}
+\toprule
+Duality class & Premises & Law-specific Horn clause \\
+\midrule
+\Law{4952} / \Law{41252}
+  & 1 & $\mathsf S(z,y;h)\Rightarrow
+          \mathsf C(y,\langle x,\langle y,\langle y,h\rangle\rangle\rangle;x)$ \\
+\Law{40914} / \Law{4957}
+  & 1 & $\mathsf S(y,x;h)\Rightarrow
+          \mathsf C(\langle\langle\langle h,y\rangle,z\rangle,x\rangle,z;x)$ \\
+\Law{5012} / \Law{41253}
+  & 1 & $\mathsf S(y,z;h)\Rightarrow
+          \mathsf C(y,\langle x,\langle z,\langle z,h\rangle\rangle\rangle;x)$ \\
+\Law{5066} / \Law{41239}
+  & 1 & $\mathsf S(z,y;h)\Rightarrow
+          \mathsf C(y,\langle y,\langle x,\langle y,h\rangle\rangle\rangle;x)$ \\
+\Law{5141} / \Law{40917}
+  & 1 & $\mathsf S(x,y;h)\Rightarrow
+          \mathsf C(y,\langle y,\langle z,\langle y,h\rangle\rangle\rangle;x)$ \\
+\Law{5295} / \Law{40909}
+  & 1 & $\mathsf S(x,y;h)\Rightarrow
+          \mathsf C(y,\langle z,\langle y,\langle y,h\rangle\rangle\rangle;x)$ \\
+\Law{38303} / \Law{7701}
+  & 2 & $\mathsf S(x,z;h_0)\wedge
+          \mathsf S(y,\langle h_0,x\rangle;h_1)\Rightarrow
+          \mathsf C(\langle h_1,y\rangle,y;x)$ \\
+\Law{7755} / \Law{38249}
+  & 1 & $\mathsf S(\langle z,\langle x,x\rangle\rangle,y;h)\Rightarrow
+          \mathsf C(y,\langle y,h\rangle;x)$ \\
+\Law{9345} / \Law{36713}
+  & 1 & $\mathsf S(x,y;h)\Rightarrow
+          \mathsf C(y,\langle h,\langle z,\langle y,y\rangle\rangle\rangle;x)$ \\
+\Law{9384} / \Law{36714}
+  & 1 & $\mathsf S(x,z;h)\Rightarrow
+          \mathsf C(y,\langle h,\langle y,\langle z,z\rangle\rangle\rangle;x)$ \\
+\Law{9680} / \Law{36524}
+  & 2 & $\mathsf S(z,y;h_0)\wedge\mathsf S(x,y;h_1)\Rightarrow
+          \mathsf C(y,\langle h_0,\langle y,h_1\rangle\rangle;x)$ \\
+\Law{9667} / \Law{36638}
+  & 1 & $\mathsf S(z,y;h)\Rightarrow
+          \mathsf C(y,\langle h,\langle x,\langle y,y\rangle\rangle\rangle;x)$ \\
+\Law{35036} / \Law{11081}
+  & 2 & $\mathsf S(y,z;h_0)\wedge\mathsf S(x,y;h_1)\Rightarrow
+          \mathsf C(\langle h_0,\langle h_1,x\rangle\rangle,y;x)$ \\
+\Law{11116} / \Law{34888}
+  & 1 & $\mathsf S(z,x;h)\Rightarrow
+          \mathsf C(y,\langle\langle x,h\rangle,\langle y,y\rangle\rangle;x)$ \\
+\bottomrule
+\end{tabular}
+\end{table}

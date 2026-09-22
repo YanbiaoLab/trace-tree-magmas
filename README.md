@@ -12,3 +12,4 @@ snapshot.
 ## Manuscript revisions
 
 - [`arxiv-v2/`](arxiv-v2/): Updated the author contributions statement.
+- [`arxiv-v3/`](arxiv-v3/): Updated the author list.
