@@ -1,0 +1,28 @@
+\begin{table}[t]
+\caption{Same-resource ATP outcomes, with the overlapping source groups kept
+separate.  ``Proofs'' are implications to \Law{2}, not models.  A trusted
+counter-satisfiable result is available only from complete Twee; ``infinite''
+is then inferred from an independent finite-side certificate, not emitted by
+the ATP.  The four ALPS counter rows duplicate Order5-130 rows.  No ATP emitted
+an explicit model or a Lean-checkable certificate.}
+\label{tab:same-resource-atp}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Benchmark & Tool & \shortstack{Implication\\proofs} &
+\shortstack{Trusted\\counter-sat.} &
+\shortstack{Infinite by\\admissibility} &
+\shortstack{No\\decisive result} \\
+\midrule
+Order5-130 & Vampire 5.0.1 & 0 & 0 & 0 & 130 \\
+Order5-130 & E 3.5.1 & 0 & 0 & 0 & 130 \\
+Order5-130 & Twee complete & 2 & 18 & 16 & 110 \\
+\midrule
+ALPS-4141 & Vampire 5.0.1 & 28 & 0 & 0 & 4,113 \\
+ALPS-4141 & E 3.5.1 & 54 & 0 & 0 & 4,087 \\
+ALPS-4141 & Twee complete & 79 & 4 & 4 & 4,058 \\
+\bottomrule
+\end{tabular}
+\end{table}
