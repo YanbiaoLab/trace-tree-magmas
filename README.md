@@ -1,5 +1,7 @@
 # Trace-Tree Magmas
 
+[Chinese version](README.zh-CN.md)
+
 ## Frozen releases
 
 - [`arxiv-v1/`](arxiv-v1/) is the frozen artifact and manuscript snapshot for
